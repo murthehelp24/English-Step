@@ -45,9 +45,9 @@ export default function ProgressPage() {
   const progressPercent = Math.round((completedLessons.length / 252) * 100);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-8 xl:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8 transition-colors duration-200">
       {/* Header Block */}
-      <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 space-y-2">
+      <div className="bg-lesson-surface rounded-3xl p-6 sm:p-9 space-y-2 border border-lesson-badge/30 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
             Master Track 252 วัน

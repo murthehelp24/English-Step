@@ -71,9 +71,9 @@ export default function ReviewPage() {
   const stageIntervals = ['1 วัน', '3 วัน', '7 วัน', '14 วัน'];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-8 xl:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8 transition-colors duration-200">
       {/* Header Block (Soft Sky Mist) */}
-      <div className="bg-review-surface rounded-2xl p-7 sm:p-9 space-y-6">
+      <div className="bg-review-surface rounded-3xl p-6 sm:p-9 space-y-6 border border-review-accent/20">
         <div className="space-y-2">
           <span className="inline-block px-3.5 py-1 rounded-full bg-background text-review-accent text-sm font-bold">
             สมุดทบทวน Spaced Repetition

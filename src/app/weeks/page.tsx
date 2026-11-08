@@ -44,9 +44,9 @@ export default function WeeksArchivePage() {
     .filter((w) => w.lessons.length > 0);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-8 xl:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8 transition-colors duration-200">
       {/* Nordic Bright Header Block */}
-      <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+      <div className="bg-lesson-surface rounded-3xl p-6 sm:p-9 flex flex-col lg:flex-row lg:items-end justify-between gap-6 border border-lesson-badge/30 shadow-sm">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
@@ -162,7 +162,7 @@ export default function WeeksArchivePage() {
                 </div>
 
                 {/* Lessons Grid inside Week */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {week.lessons.map((lesson) => {
                     const prog = appData?.lessons_progress[lesson.id];
                     const isCompleted = prog?.status === 'completed';
