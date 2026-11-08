@@ -3,19 +3,98 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Nordic Bright: Light Mode */
+  --background: #FFFFFF;
+  --foreground: #191919;
+  --muted-foreground: #595952;
+  --surface: #F5F5F2;
+  --lesson-surface: #FFF7DF;
+  --lesson-badge: #FFE28A;
+  --lesson-badge-fg: #664600;
+  --review-surface: #EAF4FF;
+  --review-accent: #1D72D8;
+  --review-accent-fg: #FFFFFF;
+  --border: #EAEAE4;
+  --control-border: #D4D4CC;
+  --accent: #FF5A1F;
+  --accent-foreground: #FFFFFF;
+  --primary: #FF5A1F;
+  --primary-foreground: #FFFFFF;
+  --dark-chip: #191919;
+  --dark-chip-fg: #FFFFFF;
+  --focus-ring: #FF5A1F;
+  --success: #15803D;
+  --success-bg: #ECFDF5;
+  --error: #D9381E;
+  --error-bg: #FEF2F2;
+
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="dark"],
+.dark {
+  /* Nordic Bright: Dark Mode (clean dark charcoal & warm sand/sky accents) */
+  --background: #121417;
+  --foreground: #F4F4F1;
+  --muted-foreground: #A8A8A0;
+  --surface: #1D2025;
+  --lesson-surface: #2B2416;
+  --lesson-badge: #4D3E19;
+  --lesson-badge-fg: #FFE28A;
+  --review-surface: #162332;
+  --review-accent: #60A5FA;
+  --review-accent-fg: #0B1120;
+  --border: #2C3138;
+  --control-border: #434A54;
+  --accent: #FF7647;
+  --accent-foreground: #121417;
+  --primary: #FF7647;
+  --primary-foreground: #121417;
+  --dark-chip: #FFF7DF;
+  --dark-chip-fg: #191919;
+  --focus-ring: #FF7647;
+  --success: #4ADE80;
+  --success-bg: #132E20;
+  --error: #F87171;
+  --error-bg: #361919;
+
+  color-scheme: dark;
 }
 
-body {
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  background-color: var(--background);
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-thai), "IBM Plex Sans Thai", "Noto Sans Thai", "Sukhumvit Set", "Thonburi", -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.65;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-en {
+  font-family: var(--font-en), "Plus Jakarta Sans", "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
