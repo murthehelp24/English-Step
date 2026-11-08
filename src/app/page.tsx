@@ -5,14 +5,29 @@ import Link from 'next/link';
 import { getAllLessons, getLessonsByWeek } from '@/lib/curriculum';
 import { getStoredData, getDueReviewItems, getAllReviewItems } from '@/lib/storage';
 import { StoredAppData } from '@/types/learning';
-import { AudioPlayer } from '@/components/lessons/AudioPlayer';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { speechService } from '@/lib/speech';
+import { Volume2, Sparkles, Flame, Check } from 'lucide-react';
+
+// Palette for Sunny Path
+const c = {
+  bg: '#FFF9EE',
+  ink: '#2A1F4A',
+  soft: '#6E6690',
+  violet: '#6C4CF1',
+  violetDark: '#4B2FC9',
+  lime: '#C8F04A',
+  pink: '#FF7AA8',
+  sky: '#7CC8FF',
+  card: '#FFFFFF',
+  line: '#EEE6D6',
+};
 
 export default function TodayPage() {
   const [appData, setAppData] = useState<StoredAppData | null>(null);
   const [currentDayNumber, setCurrentDayNumber] = useState(1);
   const [dueCount, setDueCount] = useState(0);
   const [totalReviewCount, setTotalReviewCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
   const [latestReviewSample, setLatestReviewSample] = useState<{
     original: string;
     correct: string;
@@ -29,7 +44,14 @@ export default function TodayPage() {
       setAppData(data);
 
       let nextDay = 1;
+      let completed = 0;
       const lessonsList = getAllLessons();
+      for (const lesson of lessonsList) {
+        const prog = data.lessons_progress[lesson.id];
+        if (prog?.status === 'completed') {
+          completed++;
+        }
+      }
       for (const lesson of lessonsList) {
         const prog = data.lessons_progress[lesson.id];
         if (!prog || prog.status !== 'completed') {
@@ -38,6 +60,7 @@ export default function TodayPage() {
         }
       }
       setCurrentDayNumber(nextDay);
+      setCompletedCount(completed);
 
       const due = getDueReviewItems();
       const allReviews = getAllReviewItems();
@@ -64,165 +87,325 @@ export default function TodayPage() {
   const currentLesson = allLessons.find((l) => l.day === currentDayNumber) || allLessons[0];
   const currentWeekLessons = getLessonsByWeek(currentLesson?.week || 1);
 
-  const headlineEnglish =
-    currentLesson?.headlineEnglish || 'Hello, World.';
-  const headlineThai = currentLesson?.headlineThai || currentLesson?.title || '';
+  const headlineEnglish = currentLesson?.headlineEnglish || 'English has twenty-six letters.';
+  const headlineThai = currentLesson?.headlineThai || currentLesson?.title || 'ภาษาอังกฤษมีตัวอักษร 26 ตัว';
+
+  const completedIds = new Set(
+    Object.entries(appData?.lessons_progress ?? {})
+      .filter(([, pr]) => pr.status === 'completed')
+      .map(([id]) => id)
+  );
+
+  const totalDays = allLessons.length || 252;
+  const streakDays = Math.max(1, completedCount);
+  const pct = completedCount / totalDays;
+  const R = 52;
+  const C = 2 * Math.PI * R;
+  const offsets = [0, 70, 100, 70, 0, -70, -100]; // zig-zag x-offsets (px)
+
+  const lessonParts = [
+    { key: 'sound', th: 'ฟัง & จับเสียง IPA', min: 12, icon: '👂', bg: '#FFF1F6' },
+    { key: 'vocab', th: 'ศัพท์ & ก้อนคำ Chunks', min: 15, icon: '🧩', bg: '#EEF8FF' },
+    { key: 'practice', th: 'แบบฝึกหัด Interleaved', min: 18, icon: '✏️', bg: '#F4F0FF' },
+    { key: 'speak', th: 'ฝึกพูดคล่อง 4/3/2', min: 15, icon: '🎤', bg: '#F3FBE3' },
+  ];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
-      {/* Main Two-Block Study Stage (Nordic Bright) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
-        {/* Left Block: Warm Butter Yellow Lesson Card (8 cols) */}
-        <article className="lg:col-span-8 bg-lesson-surface rounded-2xl p-7 sm:p-10 flex flex-col justify-between gap-7">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
-                  Phase {currentLesson?.phase ?? 0} • {currentLesson?.cefr_level || 'Pre-A1'}
-                </span>
-                <span className="inline-block px-3 py-1 rounded-full bg-background text-foreground text-xs font-bold border border-border">
-                  สัปดาห์ที่ {currentLesson?.week} • วันที่ {currentLesson?.day} / 252
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-muted-foreground">
-                ประมาณ {currentLesson?.minutes || 60} นาที / วัน
-              </span>
-            </div>
+    <>
+      {/* Hide the legacy top navbar and footer only on this sunny homepage */}
+      <style>{`
+        header:has(~ main.flex-1), main.flex-1 ~ footer { display: none !important; }
+        main.flex-1 { padding-bottom: 0 !important; }
+      `}</style>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground leading-tight">
-              {currentLesson?.title}
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              {currentLesson?.objective}
-            </p>
-          </div>
+      <div
+        style={{ background: c.bg, color: c.ink, fontFamily: "Mali, 'Nunito', sans-serif" }}
+        className="min-h-screen pb-24 transition-colors duration-200"
+      >
+        {/* Google Fonts */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@600;800;900&display=swap"
+        />
 
-          {/* Highlighted Example Sentence White Card */}
-          <div className="bg-background rounded-xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-xs font-bold text-muted-foreground">ประโยคสำคัญประจำบทเรียน</div>
-              <div className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-1">
-                {headlineEnglish}
-              </div>
-              {headlineThai && (
-                <div className="text-base text-muted-foreground mt-1">
-                  {headlineThai}
-                </div>
-              )}
-            </div>
-            <div className="self-start sm:self-center">
-              <AudioPlayer text={headlineEnglish} label="ฟังเสียงอ่าน" />
-            </div>
-          </div>
+        {/* Top Header */}
+        <header className="max-w-[1240px] mx-auto px-5 pt-5 pb-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-1.5 group">
+            <span
+              className="text-2xl sm:text-3xl font-[900] tracking-tight group-hover:scale-105 transition-transform"
+              style={{ fontFamily: 'Nunito, sans-serif', color: c.violet }}
+            >
+              English<span style={{ color: c.pink }}>Steps</span> 🐾
+            </span>
+          </Link>
 
-          {/* Bottom Summary & Primary CTA Button */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-            <div className="text-sm font-semibold text-muted-foreground">
-              ครบ 4 แกน: เสียง & IPA · ศัพท์ {currentLesson?.vocabCount || 6} คำ + Chunks · แบบฝึก {currentLesson?.exerciseCount || 8} ข้อ · ฝึกพูด 4/3/2
-            </div>
+          <div className="flex items-center gap-2.5 text-sm font-extrabold">
+            <span
+              className="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 text-xs sm:text-sm"
+              style={{ background: '#FFE7C2', color: '#8A4A00' }}
+            >
+              <Flame className="w-4 h-4 fill-current text-orange-500" />
+              <span>{streakDays} วันติด</span>
+            </span>
+
+            <span
+              className="px-3.5 py-1.5 rounded-full hidden sm:inline-flex items-center gap-1 text-xs sm:text-sm"
+              style={{ background: '#E6F9C4', color: '#3A6B0A' }}
+            >
+              <Sparkles className="w-4 h-4 text-lime-600" />
+              <span>{completedCount * 10} XP</span>
+            </span>
 
             <Link
-              href={`/lessons/${currentLesson?.id}`}
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-primary text-primary-foreground text-base font-extrabold hover:brightness-105 active:scale-[0.99] transition-all whitespace-nowrap"
+              href="/settings"
+              aria-label="ตั้งค่า"
+              className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:opacity-80 transition-opacity border border-[#EEE6D6]"
             >
-              <span>เริ่มเรียนวันที่ {currentLesson?.day}</span>
-              <ArrowRight className="w-5 h-5" />
+              ⚙️
             </Link>
           </div>
-        </article>
+        </header>
 
-        {/* Right Block: Soft Sky Mist Review Card (4 cols) */}
-        <aside className="lg:col-span-4 bg-review-surface rounded-2xl p-7 sm:p-8 flex flex-col justify-between gap-6">
-          <div className="space-y-4">
-            <div className="text-sm font-extrabold text-review-accent">
-              ทบทวนข้อที่เคยผิด (Spaced Repetition)
-            </div>
-            <h2 className="text-2xl font-extrabold text-foreground">
-              {dueCount > 0
-                ? `รอทบทวน ${dueCount} ข้อ`
-                : totalReviewCount > 0
-                ? `บันทึกไว้ ${totalReviewCount} ข้อ`
-                : 'พร้อมฝึกทบทวน'}
-            </h2>
-            <p className="text-base text-muted-foreground leading-relaxed">
-              ฝึกซ้ำตามรอบ 1, 3, 7, 14, และ 30 วัน เพื่อแก้จุดผิดเฉพาะคนไทยและเปลี่ยนเป็นความแม่นยำอัตโนมัติ
-            </p>
-
-            {/* Mistake vs Correction White Card */}
-            <div className="bg-background rounded-xl p-4 sm:p-5 space-y-2 text-base">
-              <div className="font-display line-through text-error">
-                {latestReviewSample.original}
-              </div>
-              <div className="font-display font-bold text-success flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                <span>{latestReviewSample.correct}</span>
-              </div>
-            </div>
-          </div>
-
-          <Link
-            href="/review"
-            className="w-full py-3.5 px-5 rounded-xl bg-review-accent text-review-accent-fg text-sm font-extrabold text-center hover:brightness-105 active:scale-[0.99] transition-all"
+        {/* Main 3-Column Content */}
+        <main className="max-w-[1240px] mx-auto px-4 sm:px-5 mt-4 grid grid-cols-1 lg:grid-cols-[290px_minmax(0,1fr)_320px] gap-6 items-start">
+          {/* =========================================================================
+              LEFT COLUMN: Friendly Progress Ring & Today's Headline Card
+              ========================================================================= */}
+          <aside
+            className="rounded-[28px] p-6 text-center space-y-4"
+            style={{ background: c.card, border: `2px solid ${c.line}` }}
           >
-            ไปหน้าทบทวน {dueCount > 0 ? `(${dueCount})` : ''}
-          </Link>
-        </aside>
-      </div>
+            <div>
+              <p className="font-bold text-sm" style={{ color: c.soft }}>
+                สวัสดี! วันนี้ไปต่อกัน 👋
+              </p>
+              <svg viewBox="0 0 130 130" className="w-36 h-36 mx-auto my-2 -rotate-90">
+                <circle cx="65" cy="65" r={R} fill="none" stroke="#F1ECFF" strokeWidth="13" />
+                <circle
+                  cx="65"
+                  cy="65"
+                  r={R}
+                  fill="none"
+                  stroke={c.violet}
+                  strokeWidth="13"
+                  strokeLinecap="round"
+                  strokeDasharray={C}
+                  strokeDashoffset={C * (1 - Math.max(pct, 0.02))}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              <div className="-mt-[105px] mb-[50px]">
+                <div className="text-3xl font-[900]" style={{ fontFamily: 'Nunito, sans-serif' }}>
+                  {currentLesson.day}
+                </div>
+                <div className="text-xs font-semibold" style={{ color: c.soft }}>
+                  จาก {totalDays} วัน
+                </div>
+              </div>
+            </div>
 
-      {/* Horizontal Week Strip */}
-      <section className="space-y-4 pt-2">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-foreground">
-            วันเรียนในสัปดาห์ที่ {currentLesson?.week}: {currentLesson?.week_title}
-          </h2>
-          <Link
-            href="/weeks"
-            className="text-sm font-bold text-accent hover:underline"
+            {/* Headline Sentence Box (Clean, without the bulky chunky bottom button) */}
+            <div className="rounded-2xl p-4 text-left space-y-1.5" style={{ background: '#F4F0FF' }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold" style={{ color: c.violet }}>
+                  ประโยคเด็ดวันนี้
+                </span>
+                <button
+                  type="button"
+                  onClick={() => speechService.speak(headlineEnglish)}
+                  className="text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 hover:opacity-80 transition-opacity active:scale-95"
+                  style={{ background: '#E8E0FF', color: c.violet }}
+                  title="ฟังเสียงอ่าน"
+                  aria-label="ฟังเสียงอ่านประโยค"
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>ฟังเสียง</span>
+                </button>
+              </div>
+
+              <div className="text-base sm:text-lg font-extrabold leading-snug" style={{ fontFamily: 'Nunito, sans-serif' }}>
+                {headlineEnglish}
+              </div>
+              <div className="text-xs sm:text-sm font-medium" style={{ color: c.soft }}>
+                {headlineThai}
+              </div>
+            </div>
+          </aside>
+
+          {/* =========================================================================
+              CENTER COLUMN: The Winding Sunny Path (Clean, Smooth Flat Nodes)
+              ========================================================================= */}
+          <section
+            className="rounded-[28px] px-6 py-8 relative overflow-hidden text-center"
+            style={{ background: 'linear-gradient(180deg,#EFE9FF 0%,#FFF3E0 100%)' }}
           >
-            ดูครบทั้ง 36 สัปดาห์ (6 Phases / 252 วัน) →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-          {currentWeekLessons.map((lesson) => {
-            const prog = appData?.lessons_progress[lesson.id];
-            const isCurrent = lesson.day === currentDayNumber;
-            const isCompleted = prog?.status === 'completed';
-
-            return (
-              <Link
-                key={lesson.id}
-                href={`/lessons/${lesson.id}`}
-                className={`p-4 rounded-xl text-left transition-all ${
-                  isCurrent
-                    ? 'bg-dark-chip text-dark-chip-fg font-bold'
-                    : isCompleted
-                    ? 'bg-success-bg text-foreground hover:opacity-90'
-                    : 'bg-surface text-foreground hover:opacity-85'
-                }`}
+            <div>
+              <span
+                className="inline-block px-4 py-1 rounded-full text-xs sm:text-sm font-extrabold tracking-wide"
+                style={{ background: c.lime, color: '#2A1F4A' }}
               >
-                <div className="flex items-center justify-between text-xs font-bold mb-1">
-                  <span
-                    className={
-                      isCurrent
-                        ? 'text-[#FF8A5B] dark:text-[#B83205]'
-                        : isCompleted
-                        ? 'text-success'
-                        : 'text-muted-foreground'
-                    }
+                สัปดาห์ {currentLesson.week} · {currentLesson.cefr_level || 'Pre-A1'}
+              </span>
+              <h1 className="text-xl sm:text-2xl font-extrabold mt-3 leading-snug text-foreground">
+                {currentLesson.week_title}
+              </h1>
+            </div>
+
+            {/* 7-Day Path */}
+            <ol className="mt-14 mb-8 flex flex-col items-center gap-6">
+              {currentWeekLessons.map((l, i) => {
+                const done = completedIds.has(l.id);
+                const now = l.day === currentDayNumber;
+                const locked = !done && !now && l.day > currentDayNumber;
+
+                return (
+                  <li
+                    key={l.id}
+                    className="relative flex flex-col items-center group"
+                    style={{ transform: `translateX(${offsets[i % 7]}px)` }}
                   >
-                    วันที่ {lesson.day}
-                    {isCurrent ? ' · วันนี้' : isCompleted ? ' · จบแล้ว' : ''}
-                  </span>
+                    {/* Bouncing Pointer Badge on the active day */}
+                    {now && (
+                      <span
+                        className="absolute -top-10 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold text-white animate-bounce shadow-md z-10"
+                        style={{ background: c.ink }}
+                      >
+                        เริ่มตรงนี้!
+                      </span>
+                    )}
+
+                    <Link
+                      href={`/lessons/${l.id}`}
+                      title={l.title}
+                      className={`w-[74px] h-[74px] rounded-full grid place-items-center text-2xl font-[900] transition-all hover:scale-105 active:scale-95 ${
+                        now ? 'ring-[5px] ring-white shadow-lg' : 'shadow-sm'
+                      }`}
+                      style={{
+                        fontFamily: 'Nunito, sans-serif',
+                        background: now ? c.violet : done ? c.lime : '#E4DFEE',
+                        color: now ? '#fff' : locked ? '#8E85A8' : c.ink,
+                      }}
+                    >
+                      {done ? <Check className="w-8 h-8 stroke-[3]" /> : l.day}
+                    </Link>
+
+                    <span
+                      className="mt-2 text-xs font-bold max-w-[150px] text-center line-clamp-2 leading-tight"
+                      style={{ color: now ? c.ink : c.soft }}
+                    >
+                      {l.title}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+
+          {/* =========================================================================
+              RIGHT COLUMN: Today's Missions & Mistake Review Card
+              ========================================================================= */}
+          <aside className="space-y-5">
+            {/* Missions Card */}
+            <div
+              className="rounded-[28px] p-6 space-y-3"
+              style={{ background: c.card, border: `2px solid ${c.line}` }}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-extrabold text-lg">ภารกิจวันนี้ 🎯</h2>
+                <span className="text-xs font-bold text-muted-foreground">{currentLesson.minutes || 60} นาที</span>
+              </div>
+              <p className="text-xs sm:text-sm font-semibold" style={{ color: c.soft }}>
+                {currentLesson.title}
+              </p>
+
+              <ul className="space-y-2.5 pt-1">
+                {lessonParts.map((part) => (
+                  <li
+                    key={part.key}
+                    className="flex items-center gap-3 p-3 rounded-2xl"
+                    style={{ background: part.bg }}
+                  >
+                    <span className="text-xl">{part.icon}</span>
+                    <span className="flex-1 text-xs sm:text-sm font-bold">{part.th}</span>
+                    <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-white shadow-xs">
+                      {part.min}′
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Mistake Review Card */}
+            <Link
+              href="/review"
+              className="block rounded-[28px] p-6 hover:-translate-y-1 transition-transform border border-pink-200"
+              style={{ background: '#FFE4EE' }}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-extrabold text-lg text-foreground">แก้จุดพลาด 💪</h2>
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-extrabold text-white"
+                  style={{ background: c.pink }}
+                >
+                  {dueCount || totalReviewCount || 0}
+                </span>
+              </div>
+              <div className="mt-3 rounded-2xl bg-white p-3.5 text-xs sm:text-sm space-y-1">
+                <div className="line-through font-medium" style={{ color: '#C24A6E' }}>
+                  {latestReviewSample.original}
                 </div>
-                <div className="text-sm font-bold line-clamp-2 leading-snug">
-                  {lesson.title}
+                <div className="font-bold flex items-center gap-1.5" style={{ color: '#3E8A1E' }}>
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>{latestReviewSample.correct}</span>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-    </div>
+              </div>
+            </Link>
+          </aside>
+        </main>
+
+        {/* Desktop Quick Bottom Links */}
+        <nav className="hidden lg:flex justify-center gap-3 mt-10 text-sm font-extrabold">
+          {[
+            ['🗺️ บทเรียน 36 โมดูล', '/weeks'],
+            ['📚 คลังคำศัพท์ & Chunks', '/vocabulary'],
+            ['📈 สถิติ & พัฒนาการ', '/progress'],
+            ['⚙️ ตั้งค่า', '/settings'],
+          ].map(([title, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="px-5 py-2.5 rounded-full bg-white hover:opacity-85 transition-opacity"
+              style={{ border: `2px solid ${c.line}`, color: c.ink }}
+            >
+              {title}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Mobile Bottom Tab Bar */}
+        <nav
+          className="lg:hidden fixed bottom-0 inset-x-0 z-40 grid grid-cols-4 text-center text-[11px] font-extrabold pt-2 pb-5 bg-white"
+          style={{ borderTop: `2px solid ${c.line}` }}
+        >
+          {[
+            ['🏠', 'วันนี้', '/'],
+            ['🗺️', 'บทเรียน', '/weeks'],
+            ['🔁', 'ทบทวน', '/review'],
+            ['📈', 'พัฒนาการ', '/progress'],
+          ].map(([icon, label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              style={{ color: href === '/' ? c.violet : c.soft }}
+              className="py-1"
+            >
+              <div className="text-xl">{icon}</div>
+              <div>{label}</div>
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }
