@@ -62,9 +62,9 @@ export default function VocabularyPage() {
   const pagedVocab = filteredVocab.slice(0, visibleCount);
 
   return (
-    <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-8 xl:px-10 py-6 sm:py-8 space-y-6 sm:space-y-8 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
       {/* Header & Filter Block */}
-      <div className="bg-lesson-surface rounded-3xl p-6 sm:p-9 space-y-6 border border-lesson-badge/30 shadow-sm">
+      <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -153,9 +153,9 @@ export default function VocabularyPage() {
       </div>
 
       {/* Vocabulary Grid */}
-      <section className="bg-surface rounded-3xl p-6 sm:p-8 space-y-6 border border-border/60">
+      <section className="bg-surface rounded-2xl p-6 sm:p-8 space-y-6">
         {filteredVocab.length === 0 ? (
-          <div className="p-10 bg-background rounded-2xl text-center space-y-2 border border-border">
+          <div className="p-10 bg-background rounded-xl text-center space-y-2">
             <div className="text-lg font-extrabold text-foreground">ไม่พบคำศัพท์ตามเงื่อนไขที่เลือก</div>
             <p className="text-sm text-muted-foreground">
               ลองล้างช่องค้นหา หรือเปลี่ยนตัวกรอง Phase ดูนะครับ
@@ -163,7 +163,7 @@ export default function VocabularyPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4.5">
               {pagedVocab.map((item, idx) => {
                 const isSaved = savedWords.includes(item.en);
 

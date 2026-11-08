@@ -3,7 +3,7 @@ import { IBM_Plex_Sans_Thai, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { CloudSyncProvider } from '@/components/auth/CloudSyncProvider';
-import { AppNavigation } from '@/components/layout/AppNavigation';
+import { Navbar } from '@/components/layout/Navbar';
 
 const ibmPlexThai = IBM_Plex_Sans_Thai({
   subsets: ['thai', 'latin'],
@@ -58,10 +58,19 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-background text-foreground font-body transition-colors duration-200">
+      <body className="min-h-screen bg-background text-foreground flex flex-col font-body transition-colors duration-200">
         <ThemeProvider>
           <CloudSyncProvider />
-          <AppNavigation>{children}</AppNavigation>
+          <Navbar />
+          <main className="flex-1 pb-16">{children}</main>
+          <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground bg-background">
+            <div className="max-w-[1400px] mx-auto px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="font-medium text-foreground">English Steps — ภาษาอังกฤษทีละก้าว ในทุกวันของคุณ</div>
+              <div className="text-muted-foreground">
+                เรียนวันละนิด สม่ำเสมอ ไม่ต้องรีบ
+              </div>
+            </div>
+          </footer>
         </ThemeProvider>
       </body>
     </html>
