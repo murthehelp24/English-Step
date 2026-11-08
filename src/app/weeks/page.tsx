@@ -44,7 +44,7 @@ export default function WeeksArchivePage() {
     .filter((w) => w.lessons.length > 0);
 
   return (
-    <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
       {/* Nordic Bright Header Block */}
       <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div className="space-y-2">

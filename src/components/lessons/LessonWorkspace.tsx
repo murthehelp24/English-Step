@@ -22,7 +22,6 @@ import {
   MessageSquare,
   Check,
   List,
-  AlertTriangle,
   Volume2,
   Eye,
   EyeOff,
@@ -174,7 +173,7 @@ export function LessonWorkspace({
   const secsDisplay = String(secondsLeft % 60).padStart(2, '0');
 
   return (
-    <div className="max-w-6xl mx-auto px-5 sm:px-10 py-7 space-y-6 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-7 space-y-6 transition-colors duration-200">
       {/* Top Bar: Back Link, Metadata, Save Status & AI Toggle */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-border">
         <div className="space-y-1.5">
@@ -320,28 +319,6 @@ export function LessonWorkspace({
                 </div>
               </div>
 
-              {/* Thai L1 Warning Block */}
-              {lesson.l1_warning && (
-                <div className="bg-background rounded-xl p-5 sm:p-6 space-y-3 border-l-4 border-error">
-                  <div className="flex items-center gap-2 text-sm font-extrabold text-error">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>กับดักภาษาไทยที่มักพลาด (Thai L1 Fix)</span>
-                  </div>
-                  <div className="space-y-2 text-sm sm:text-base leading-relaxed">
-                    <div>
-                      <span className="font-bold text-foreground">มักเผลอพูด/เขียนผิดว่า: </span>
-                      <span className="text-error font-medium">{lesson.l1_warning.mistake_example}</span>
-                    </div>
-                    <div>
-                      <span className="font-bold text-foreground">เหตุผลจากภาษาไทย: </span>
-                      <span className="text-muted-foreground">{lesson.l1_warning.why_thai_fails}</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-success-bg text-success font-bold">
-                      วิธีแก้ทันที: {lesson.l1_warning.fix_rule}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* 60-Min Four Strands Breakdown */}
               {lesson.time_breakdown && lesson.time_breakdown.length > 0 && (

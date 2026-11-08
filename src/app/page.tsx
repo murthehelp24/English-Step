@@ -69,7 +69,7 @@ export default function TodayPage() {
   const headlineThai = currentLesson?.headlineThai || currentLesson?.title || '';
 
   return (
-    <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
       {/* Main Two-Block Study Stage (Nordic Bright) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
         {/* Left Block: Warm Butter Yellow Lesson Card (8 cols) */}

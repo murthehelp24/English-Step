@@ -62,7 +62,7 @@ export default function VocabularyPage() {
   const pagedVocab = filteredVocab.slice(0, visibleCount);
 
   return (
-    <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
       {/* Header & Filter Block */}
       <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -163,7 +163,7 @@ export default function VocabularyPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4.5">
               {pagedVocab.map((item, idx) => {
                 const isSaved = savedWords.includes(item.en);
 

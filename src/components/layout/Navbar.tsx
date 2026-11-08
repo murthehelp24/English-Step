@@ -95,7 +95,7 @@ export function Navbar() {
 
   return (
     <header className="w-full border-b border-border bg-background transition-colors duration-200">
-      <div className="max-w-6xl mx-auto px-5 sm:px-10 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-4 flex items-center justify-between gap-4">
         {/* Brand & Main Navigation */}
         <div className="flex items-center gap-8">
           <Link

@@ -64,7 +64,7 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-1 pb-16">{children}</main>
           <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground bg-background">
-            <div className="max-w-6xl mx-auto px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="max-w-[1400px] mx-auto px-6 sm:px-10 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="font-medium text-foreground">English Steps — ภาษาอังกฤษทีละก้าว ในทุกวันของคุณ</div>
               <div className="text-muted-foreground">
                 เรียนวันละนิด สม่ำเสมอ ไม่ต้องรีบ

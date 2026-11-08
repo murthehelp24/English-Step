@@ -71,7 +71,7 @@ export default function ReviewPage() {
   const stageIntervals = ['1 วัน', '3 วัน', '7 วัน', '14 วัน'];
 
   return (
-    <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
+    <div className="max-w-[1400px] mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
       {/* Header Block (Soft Sky Mist) */}
       <div className="bg-review-surface rounded-2xl p-7 sm:p-9 space-y-6">
         <div className="space-y-2">
