@@ -1,24 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
-import { updateProfile } from '@/lib/storage';
-import { ArrowRight, Mail, Key } from 'lucide-react';
+import { syncFromCloud, updateProfile } from '@/lib/storage';
+import { ArrowRight, Mail, Key, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 
-export default function LoginPage() {
+function mapAuthErrorToThai(rawMessage: string): string {
+  const lower = rawMessage.toLowerCase();
+  if (lower.includes('invalid login credentials')) {
+    return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบแล้วลองอีกครั้ง';
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'บัญชีนี้ยังไม่ได้ยืนยันอีเมล กรุณายืนยันอีเมลหรือเปิด Auto Confirm ใน Supabase Auth';
+  }
+  if (lower.includes('too many requests') || lower.includes('rate limit')) {
+    return 'ลองเข้าสู่ระบบถี่เกินไป กรุณารอสักครู่แล้วลองใหม่ครับ';
+  }
+  return rawMessage;
+}
+
+function getSafeNextPath(nextParam: string | null): string {
+  if (!nextParam) return '/';
+  if (!nextParam.startsWith('/') || nextParam.startsWith('//') || nextParam === '/login') {
+    return '/';
+  }
+  return nextParam;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const errorCode = searchParams.get('error');
+  const nextPath = getSafeNextPath(searchParams.get('next'));
+
+  useEffect(() => {
+    if (errorCode === 'unauthorized') {
+      setErrorMessage(
+        'บัญชีอีเมลนี้ไม่มีสิทธิ์เข้าใช้งานระบบ (อนุญาตเฉพาะอีเมลเจ้าของที่กำหนดไว้ใน OWNER_EMAIL)'
+      );
+      if (isSupabaseConfigured && supabase) {
+        void supabase.auth.signOut();
+      }
+    } else if (errorCode === 'auth_callback_failed') {
+      setErrorMessage('ลิงก์ยืนยันตัวตนไม่ถูกต้องหรือหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+    }
+  }, [errorCode]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage(null);
 
-    // If Supabase is configured, use official Supabase Auth
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -27,30 +66,46 @@ export default function LoginPage() {
         });
 
         if (error) {
-          setErrorMessage(error.message);
+          setErrorMessage(mapAuthErrorToThai(error.message));
           setIsLoading(false);
           return;
         }
 
         if (data.user) {
-          updateProfile({ email: data.user.email || email });
-          router.push('/');
+          // Verify with server & load cloud state immediately (also verifies OWNER_EMAIL)
+          const syncRes = await syncFromCloud();
+          if (syncRes.mode === 'unauthenticated') {
+            await supabase.auth.signOut();
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setErrorMessage(
+              'บัญชีอีเมลนี้ไม่มีสิทธิ์เข้าใช้งานระบบ (อนุญาตเฉพาะอีเมลเจ้าของ)'
+            );
+            setIsLoading(false);
+            return;
+          }
+
+          router.push(nextPath);
+          router.refresh();
+          return;
         }
       } catch {
-        setErrorMessage('เกิดข้อผิดพลาดในการเชื่อมต่อ Supabase Auth');
+        setErrorMessage('เกิดข้อผิดพลาดในการเชื่อมต่อ Supabase Auth กรุณาลองใหม่');
         setIsLoading(false);
       }
       return;
     }
 
-    // Local Developer Mode (when Supabase keys are not yet configured)
+    // Fallback when Supabase env vars are absent (offline/local preview mode)
     setTimeout(() => {
-      updateProfile({
-        email: email.trim() || 'owner@englishsteps.local',
-        name: 'เจ้าของระบบ (Local Mode)',
-      });
-      router.push('/');
-    }, 400);
+      updateProfile(
+        {
+          email: email.trim() || 'owner@englishsteps.local',
+          name: 'เจ้าของระบบ (Local Mode)',
+        },
+        { skipCloudSync: true }
+      );
+      router.push(nextPath);
+    }, 300);
   };
 
   return (
@@ -64,25 +119,30 @@ export default function LoginPage() {
             เข้าสู่ระบบเจ้าของ
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            พื้นที่เรียนรู้ภาษาอังกฤษส่วนตัว เฉพาะเจ้าของระบบ
+            พื้นที่เรียนรู้ภาษาอังกฤษส่วนตัว ปลอดภัยสำหรับบัญชีเจ้าของระบบ
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4 pt-1">
           {errorMessage && (
-            <div className="p-3.5 bg-error-bg rounded-xl text-sm font-medium text-error">
+            <div className="p-4 bg-error-bg rounded-xl text-sm font-semibold text-error leading-relaxed">
               {errorMessage}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-sm font-bold text-foreground mb-1.5"
+            >
               อีเมลเจ้าของระบบ
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
+                id="login-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="owner@example.com"
@@ -93,18 +153,32 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
+            <label
+              htmlFor="login-password"
+              className="block text-sm font-bold text-foreground mb-1.5"
+            >
               รหัสผ่าน
             </label>
             <div className="relative">
               <Key className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
-                type="password"
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-background border-2 border-control-border rounded-xl pl-10 pr-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                required={isSupabaseConfigured}
+                className="w-full bg-background border-2 border-control-border rounded-xl pl-10 pr-12 py-3 text-base text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -113,25 +187,42 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full bg-primary text-primary-foreground font-extrabold text-base py-3.5 rounded-xl hover:brightness-105 disabled:opacity-50 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2"
           >
-            <span>{isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</span>
+            <span>{isLoading ? 'กำลังตรวจสอบสิทธิ์...' : 'เข้าสู่ระบบ'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <div className="pt-2">
-          <div className="p-4 rounded-xl bg-lesson-surface text-sm text-center leading-relaxed">
+          <div className="p-4 rounded-xl bg-lesson-surface text-sm text-center leading-relaxed flex items-center justify-center gap-2">
             {!isSupabaseConfigured ? (
               <span className="font-semibold text-lesson-badge-fg">
-                โหมดพัฒนาในเครื่อง (Local Mode): สามารถกดเข้าสู่ระบบได้ทันทีโดยไม่ต้องเชื่อมต่อ Cloud Auth
+                โหมดพัฒนาในเครื่อง (Local Mode): สามารถกดเข้าสู่ระบบได้ทันที
               </span>
             ) : (
-              <span className="text-muted-foreground font-medium">
-                ระบบตรวจสอบสิทธิ์ผ่าน Supabase Row Level Security (RLS)
-              </span>
+              <>
+                <ShieldCheck className="w-4 h-4 text-success flex-shrink-0" />
+                <span className="text-foreground font-semibold">
+                  ป้องกันการเข้าถึงด้วย Supabase Auth & Row Level Security (RLS)
+                </span>
+              </>
             )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-md mx-auto px-5 py-16 text-center text-muted-foreground text-base">
+          กำลังเตรียมหน้าเข้าสู่ระบบ...
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

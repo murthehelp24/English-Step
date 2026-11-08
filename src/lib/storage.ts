@@ -9,8 +9,11 @@ import {
   ReviewItem,
   ChatMessage,
 } from '@/types/learning';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { generateUuid } from '@/lib/uuid';
 
 const APP_DATA_KEY = 'english_steps_user_data_v1';
+const PENDING_BACKUP_KEY = 'english_steps_pending_local_backup_v1';
 
 const DEFAULT_PROFILE: UserProfile = {
   id: 'local-owner',
@@ -32,6 +35,139 @@ const INITIAL_DATA: StoredAppData = {
   chat_messages: {},
   last_sync_at: undefined,
 };
+
+function emitSyncStatus(status: 'syncing' | 'synced' | 'error' | 'local', message?: string) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('english_steps_sync_status', {
+      detail: { status, message },
+    })
+  );
+}
+
+async function postSyncAction(payload: Record<string, unknown>): Promise<boolean> {
+  if (typeof window === 'undefined' || !isSupabaseConfigured) {
+    return false;
+  }
+
+  try {
+    emitSyncStatus('syncing');
+    const res = await fetch('/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      emitSyncStatus('error', errData.error || 'ซิงก์ข้อมูลไม่สำเร็จ');
+      return false;
+    }
+
+    emitSyncStatus('synced');
+    return true;
+  } catch {
+    emitSyncStatus('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ซิงก์ได้ชั่วคราว');
+    return false;
+  }
+}
+
+function hasMeaningfulProgress(data: StoredAppData): boolean {
+  return (
+    Object.keys(data.lessons_progress || {}).length > 0 ||
+    (data.mistakes || []).length > 0 ||
+    (data.review_items || []).length > 0 ||
+    (data.saved_vocabulary || []).length > 0
+  );
+}
+
+export function getPendingLocalBackup(): StoredAppData | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(PENDING_BACKUP_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAppData;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingLocalBackup(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PENDING_BACKUP_KEY);
+  window.dispatchEvent(new Event('english_steps_storage_updated'));
+}
+
+export async function importPendingLocalBackupToCloud(): Promise<boolean> {
+  const backup = getPendingLocalBackup();
+  if (!backup) return false;
+
+  const ok = await postSyncAction({
+    action: 'import_full_data',
+    data: backup,
+  });
+
+  if (ok) {
+    clearPendingLocalBackup();
+    await syncFromCloud();
+  }
+  return ok;
+}
+
+export async function syncFromCloud(): Promise<{
+  ok: boolean;
+  mode: 'cloud' | 'local' | 'unauthenticated' | 'error';
+  data?: StoredAppData;
+}> {
+  if (typeof window === 'undefined' || !isSupabaseConfigured) {
+    return { ok: false, mode: 'local' };
+  }
+
+  try {
+    emitSyncStatus('syncing');
+    const res = await fetch('/api/sync', { method: 'GET', cache: 'no-store' });
+
+    if (res.status === 401 || res.status === 403) {
+      emitSyncStatus('local');
+      return { ok: false, mode: 'unauthenticated' };
+    }
+
+    if (!res.ok) {
+      emitSyncStatus('error', 'โหลดข้อมูลจากคลาวด์ไม่สำเร็จ');
+      return { ok: false, mode: 'error' };
+    }
+
+    const payload = await res.json();
+    if (payload.mode !== 'cloud' || !payload.data) {
+      return { ok: false, mode: 'local' };
+    }
+
+    const cloudData = payload.data as StoredAppData;
+    const localData = getStoredData();
+
+    // Preserve pre-login local progress separately so the user can choose explicitly to import it
+    if (
+      localData.profile.id === 'local-owner' &&
+      hasMeaningfulProgress(localData) &&
+      !hasMeaningfulProgress(cloudData) &&
+      !localStorage.getItem(PENDING_BACKUP_KEY)
+    ) {
+      localStorage.setItem(PENDING_BACKUP_KEY, JSON.stringify(localData));
+    }
+
+    // Preserve local vocabulary cache if optional SQL column hasn't been added yet
+    if (payload.hasSavedVocabColumn === false && localData.saved_vocabulary.length > 0) {
+      cloudData.saved_vocabulary = localData.saved_vocabulary;
+    }
+
+    saveStoredData(cloudData);
+    emitSyncStatus('synced');
+    return { ok: true, mode: 'cloud', data: cloudData };
+  } catch {
+    emitSyncStatus('error', 'ไม่สามารถเชื่อมต่อคลาวด์ได้ชั่วคราว');
+    return { ok: false, mode: 'error' };
+  }
+}
 
 export function getStoredData(): StoredAppData {
   if (typeof window === 'undefined') {
@@ -57,7 +193,6 @@ export function saveStoredData(data: StoredAppData): void {
   try {
     data.last_sync_at = new Date().toISOString();
     localStorage.setItem(APP_DATA_KEY, JSON.stringify(data));
-    // Dispatch custom event for reactive cross-component updates
     window.dispatchEvent(new Event('english_steps_storage_updated'));
   } catch (e) {
     console.error('Failed to save app data:', e);
@@ -65,10 +200,28 @@ export function saveStoredData(data: StoredAppData): void {
 }
 
 // User Profile Operations
-export function updateProfile(updates: Partial<UserProfile>): UserProfile {
+export function updateProfile(
+  updates: Partial<UserProfile>,
+  options: { skipCloudSync?: boolean } = {}
+): UserProfile {
   const data = getStoredData();
   data.profile = { ...data.profile, ...updates };
   saveStoredData(data);
+
+  if (!options.skipCloudSync) {
+    void postSyncAction({
+      action: 'update_profile',
+      updates: {
+        name: updates.name,
+        timezone: updates.timezone,
+        target_minutes: updates.target_minutes,
+        theme_preference: updates.theme_preference,
+        onboarding_completed: updates.onboarding_completed,
+        started_at: updates.started_at,
+      },
+    });
+  }
+
   return data.profile;
 }
 
@@ -95,47 +248,94 @@ export function saveExerciseAttempt(
 ): ExerciseAttempt {
   const data = getStoredData();
   const currentProgress = getLessonProgress(lessonId);
+  const nowIso = new Date().toISOString();
 
   const attempt: ExerciseAttempt = {
-    id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: generateUuid(),
     lesson_id: lessonId,
     exercise_id: exerciseId,
     user_answer: userAnswer,
     is_correct: isCorrect,
     hint_used: hintUsed,
     feedback,
-    attempted_at: new Date().toISOString(),
+    attempted_at: nowIso,
   };
 
   currentProgress.attempts[exerciseId] = attempt;
-  currentProgress.last_activity_at = new Date().toISOString();
+  currentProgress.last_activity_at = nowIso;
   if (currentProgress.status === 'not_started') {
     currentProgress.status = 'in_progress';
-    currentProgress.started_at = new Date().toISOString();
+    currentProgress.started_at = nowIso;
   }
 
   data.lessons_progress[lessonId] = currentProgress;
   saveStoredData(data);
+
+  void postSyncAction({
+    action: 'save_attempt',
+    lesson_id: lessonId,
+    attempt: {
+      id: attempt.id,
+      exercise_id: attempt.exercise_id,
+      user_answer: attempt.user_answer,
+      is_correct: attempt.is_correct,
+      hint_used: attempt.hint_used,
+      feedback: attempt.feedback,
+      attempted_at: attempt.attempted_at,
+    },
+    status: currentProgress.status,
+    started_at: currentProgress.started_at,
+    last_activity_at: nowIso,
+  });
+
   return attempt;
 }
+
+const writingSyncTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 export function saveWritingSubmission(lessonId: string, submission: string): void {
   const data = getStoredData();
   const currentProgress = getLessonProgress(lessonId);
+  const nowIso = new Date().toISOString();
   currentProgress.writing_submission = submission;
-  currentProgress.last_activity_at = new Date().toISOString();
+  currentProgress.last_activity_at = nowIso;
+  if (currentProgress.status === 'not_started') {
+    currentProgress.status = 'in_progress';
+    currentProgress.started_at = nowIso;
+  }
   data.lessons_progress[lessonId] = currentProgress;
   saveStoredData(data);
+
+  if (writingSyncTimers[lessonId]) {
+    clearTimeout(writingSyncTimers[lessonId]);
+  }
+  writingSyncTimers[lessonId] = setTimeout(() => {
+    void postSyncAction({
+      action: 'save_writing',
+      lesson_id: lessonId,
+      writing_submission: submission,
+      last_activity_at: nowIso,
+    });
+    delete writingSyncTimers[lessonId];
+  }, 600);
 }
 
 export function completeLesson(lessonId: string): void {
   const data = getStoredData();
   const currentProgress = getLessonProgress(lessonId);
+  const nowIso = new Date().toISOString();
   currentProgress.status = 'completed';
-  currentProgress.completed_at = new Date().toISOString();
-  currentProgress.last_activity_at = new Date().toISOString();
+  currentProgress.completed_at = nowIso;
+  currentProgress.last_activity_at = nowIso;
   data.lessons_progress[lessonId] = currentProgress;
   saveStoredData(data);
+
+  void postSyncAction({
+    action: 'complete_lesson',
+    lesson_id: lessonId,
+    completed_at: nowIso,
+    last_activity_at: nowIso,
+  });
 }
 
 // Mistake & Spaced Repetition Review Operations
@@ -150,9 +350,10 @@ export function recordMistake(
   category: string = 'general'
 ): MistakeItem {
   const data = getStoredData();
+  const nowIso = new Date().toISOString();
 
   const mistake: MistakeItem = {
-    id: `mistake-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: generateUuid(),
     lesson_id: lessonId,
     lesson_title: lessonTitle,
     exercise_id: exerciseId,
@@ -161,18 +362,18 @@ export function recordMistake(
     correct_answer: correctAnswer,
     explanation,
     category,
-    recorded_at: new Date().toISOString(),
+    recorded_at: nowIso,
     resolved: false,
   };
 
   data.mistakes.unshift(mistake);
 
-  // Automatically enqueue for Spaced Repetition: Stage 1 = due in 1 day (or immediate for testing)
+  // Spaced Repetition Stage 1 = due in 1 day
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const reviewItem: ReviewItem = {
-    id: `review-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: generateUuid(),
     mistake_id: mistake.id,
     lesson_id: lessonId,
     prompt,
@@ -183,8 +384,35 @@ export function recordMistake(
     history: [],
   };
 
-  data.review_items.push(reviewItem);
+  data.review_items.unshift(reviewItem);
   saveStoredData(data);
+
+  void postSyncAction({
+    action: 'record_mistake',
+    mistake: {
+      id: mistake.id,
+      lesson_id: mistake.lesson_id,
+      exercise_id: mistake.exercise_id,
+      prompt: mistake.prompt,
+      original_answer: mistake.original_answer,
+      correct_answer: mistake.correct_answer,
+      explanation: mistake.explanation,
+      category: mistake.category,
+      recorded_at: mistake.recorded_at,
+      resolved: mistake.resolved,
+    },
+    review_item: {
+      id: reviewItem.id,
+      mistake_id: reviewItem.mistake_id,
+      lesson_id: reviewItem.lesson_id,
+      prompt: reviewItem.prompt,
+      correct_answer: reviewItem.correct_answer,
+      explanation: reviewItem.explanation,
+      stage: reviewItem.stage,
+      next_due_at: reviewItem.next_due_at,
+    },
+  });
+
   return mistake;
 }
 
@@ -210,14 +438,16 @@ export function submitReviewAttempt(
 
   const item = data.review_items[itemIndex];
   const now = new Date();
-  item.last_reviewed_at = now.toISOString();
+  const nowIso = now.toISOString();
+  item.last_reviewed_at = nowIso;
   item.history.push({
-    reviewed_at: now.toISOString(),
+    reviewed_at: nowIso,
     user_answer: userAnswer,
     is_correct: isCorrect,
   });
 
   const INTERVALS = [1, 3, 7, 14]; // Spaced repetition days
+  let resolved = false;
 
   if (isCorrect) {
     if (item.stage < 4) {
@@ -226,12 +456,11 @@ export function submitReviewAttempt(
       nextDue.setDate(nextDue.getDate() + INTERVALS[item.stage - 1]);
       item.next_due_at = nextDue.toISOString();
     } else {
-      // Completed all 4 stages
+      resolved = true;
       const mistake = data.mistakes.find((m) => m.id === item.mistake_id);
       if (mistake) mistake.resolved = true;
     }
   } else {
-    // If mistake repeated, reset back to stage 1 (due in 1 day)
     item.stage = 1;
     const nextDue = new Date();
     nextDue.setDate(nextDue.getDate() + 1);
@@ -240,6 +469,18 @@ export function submitReviewAttempt(
 
   data.review_items[itemIndex] = item;
   saveStoredData(data);
+
+  void postSyncAction({
+    action: 'submit_review',
+    review_item_id: item.id,
+    mistake_id: item.mistake_id,
+    stage: item.stage,
+    next_due_at: item.next_due_at,
+    last_reviewed_at: nowIso,
+    resolved,
+    history: item.history,
+  });
+
   return item;
 }
 
@@ -256,6 +497,12 @@ export function toggleSaveVocabulary(enWord: string): boolean {
     isSaved = true;
   }
   saveStoredData(data);
+
+  void postSyncAction({
+    action: 'save_vocabulary',
+    saved_vocabulary: data.saved_vocabulary,
+  });
+
   return isSaved;
 }
 
@@ -264,19 +511,23 @@ export function isVocabularySaved(enWord: string): boolean {
   return data.saved_vocabulary.includes(enWord);
 }
 
-// Chat Messages Operations
+// Chat Messages Operations (Server persistence handled directly by POST /api/chat)
 export function getChatMessages(lessonId: string): ChatMessage[] {
   const data = getStoredData();
   return data.chat_messages[lessonId] || [];
 }
 
-export function addChatMessage(lessonId: string, role: 'user' | 'assistant', content: string): ChatMessage {
+export function addChatMessage(
+  lessonId: string,
+  role: 'user' | 'assistant',
+  content: string
+): ChatMessage {
   const data = getStoredData();
   if (!data.chat_messages[lessonId]) {
     data.chat_messages[lessonId] = [];
   }
   const message: ChatMessage = {
-    id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: generateUuid(),
     lesson_id: lessonId,
     role,
     content,
@@ -287,7 +538,7 @@ export function addChatMessage(lessonId: string, role: 'user' | 'assistant', con
   return message;
 }
 
-// Data Export & Reset (Clause 12: Data ownership, backup & restore)
+// Data Export & Reset
 export function exportUserDataAsJSON(): string {
   const data = getStoredData();
   return JSON.stringify(data, null, 2);
@@ -297,7 +548,13 @@ export function importUserDataFromJSON(jsonString: string): boolean {
   try {
     const parsed = JSON.parse(jsonString);
     if (!parsed || typeof parsed !== 'object') return false;
-    saveStoredData(parsed);
+    saveStoredData(parsed as StoredAppData);
+
+    void postSyncAction({
+      action: 'import_full_data',
+      data: parsed,
+    });
+
     return true;
   } catch (e) {
     console.error('Import failed:', e);
@@ -305,8 +562,13 @@ export function importUserDataFromJSON(jsonString: string): boolean {
   }
 }
 
-export function resetAllUserData(): void {
+export function resetAllUserData(options: { localOnly?: boolean } = {}): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(APP_DATA_KEY);
+  localStorage.removeItem(PENDING_BACKUP_KEY);
   window.dispatchEvent(new Event('english_steps_storage_updated'));
+
+  if (!options.localOnly) {
+    void postSyncAction({ action: 'reset_progress' });
+  }
 }

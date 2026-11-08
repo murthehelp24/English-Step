@@ -57,6 +57,9 @@ async function seed() {
 
   console.log('Inserting lessons into Supabase with upsert (idempotent)...');
 
+  let successCount = 0;
+  let errorCount = 0;
+
   for (const lesson of lessons) {
     const { error } = await supabase.from('lessons').upsert(
       {
@@ -79,14 +82,35 @@ async function seed() {
     );
 
     if (error) {
-      console.error(`Error inserting lesson ${lesson.id}:`, error.message);
-      process.exitCode = 1;
+      errorCount++;
+      console.error(`\nError inserting lesson ${lesson.id}:`, error.message);
+      if (errorCount === 1 && error.message.includes('does not exist')) {
+        console.error('Table public.lessons not found. Please run supabase/migrations/20261108000000_init_english_steps.sql in Supabase SQL Editor first.');
+        process.exit(1);
+      }
     } else {
+      successCount++;
       process.stdout.write('.');
     }
   }
 
-  console.log('\n--- Seed Completed Successfully! ---');
+  console.log(`\nUpsert finished: ${successCount} succeeded, ${errorCount} failed.`);
+
+  if (errorCount > 0) {
+    process.exit(1);
+  }
+
+  const { count, error: countError } = await supabase
+    .from('lessons')
+    .select('id', { count: 'exact', head: true });
+
+  if (countError) {
+    console.error('Could not verify lessons count:', countError.message);
+    process.exit(1);
+  }
+
+  console.log(`Verified lessons table row count in Supabase: ${count}`);
+  console.log('--- Seed Completed Successfully! ---');
 }
 
 seed().catch((err) => {

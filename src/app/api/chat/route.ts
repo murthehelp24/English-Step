@@ -1,36 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getLessonById } from '@/lib/curriculum';
 import { generateTutorResponse } from '@/lib/ai/tutor-engine';
+import {
+  createAdminSupabaseClient,
+  getVerifiedOwnerSession,
+} from '@/lib/supabase/server';
+
+const ChatRequestSchema = z.object({
+  lesson_id: z.string().min(1),
+  message: z.string().min(1).max(2000),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant', 'system']),
+        content: z.string(),
+      })
+    )
+    .optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { lesson_id, message, history } = body;
+    const session = await getVerifiedOwnerSession();
+    if (session.configured) {
+      if (!session.user) {
+        return NextResponse.json(
+          { error: 'กรุณาเข้าสู่ระบบเจ้าของก่อนใช้งานครู AI' },
+          { status: 401 }
+        );
+      }
+      if (!session.isOwner) {
+        return NextResponse.json(
+          { error: 'บัญชีนี้ไม่มีสิทธิ์ใช้งานครู AI (เฉพาะเจ้าของระบบ)' },
+          { status: 403 }
+        );
+      }
+    }
 
-    if (!lesson_id || !message) {
+    const rawBody = await req.json();
+    const parsed = ChatRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'ต้องระบุ lesson_id และ message' },
+        { error: 'ข้อมูลที่ส่งมาไม่ถูกต้อง ต้องระบุ lesson_id และข้อความ' },
         { status: 400 }
       );
     }
 
+    const { lesson_id, message, history } = parsed.data;
+
     const lesson = getLessonById(lesson_id);
     if (!lesson) {
-      return NextResponse.json(
-        { error: 'ไม่พบบทเรียนที่ระบุ' },
-        { status: 404 }
+      return NextResponse.json({ error: 'ไม่พบบทเรียนที่ระบุ' }, { status: 404 });
+    }
+
+    // Check monthly AI usage cap if configured & authenticated
+    const monthlyBudget = Number(process.env.AI_MONTHLY_BUDGET_USD || '10');
+    if (session.configured && session.supabase && session.user && monthlyBudget > 0) {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const { data: usageRows } = await session.supabase
+        .from('usage_events')
+        .select('estimated_cost_usd')
+        .eq('user_id', session.user.id)
+        .gte('created_at', monthStart.toISOString());
+
+      const totalSpent = (usageRows || []).reduce(
+        (sum, row) => sum + Number(row.estimated_cost_usd || 0),
+        0
       );
+
+      if (totalSpent >= monthlyBudget) {
+        return NextResponse.json(
+          {
+            error:
+              'ยอดใช้งานครู AI ภายนอกถึงงบประมาณที่ตั้งไว้สำหรับเดือนนี้แล้ว (คุณยังเรียนจากเนื้อหาและแบบฝึกหัดต่อได้ปกติครับ)',
+          },
+          { status: 429 }
+        );
+      }
     }
 
-    const apiKey = process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
+    const apiKey =
+      process.env.AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.OPENAI_API_KEY;
 
-    // If an external API key is provided, we can route to external provider (e.g., Gemini / OpenAI)
-    if (apiKey) {
-      // Future live external provider call
+    // External LLM adapter hook (uses server-side secret only when real key is set)
+    if (apiKey && !apiKey.includes('your_ai_provider')) {
+      // Future external provider call can be plugged in here without exposing keys to client
     }
 
-    // Server-side Intelligent Curriculum Tutor fallback (always reliable, no external secret needed)
-    const tutorResponse = generateTutorResponse(lesson, message, history || []);
+    // Server-side Intelligent Curriculum Tutor engine (reliable, zero-cost, context-aware)
+    const tutorResponse = generateTutorResponse(
+      lesson,
+      message,
+      (history || []).filter(
+        (h): h is { role: 'user' | 'assistant'; content: string } =>
+          h.role === 'user' || h.role === 'assistant'
+      )
+    );
+
+    const timestamp = new Date().toISOString();
+
+    // Persist chat history & usage event to Supabase when authenticated
+    if (session.configured && session.supabase && session.user) {
+      await session.supabase.from('messages').insert([
+        {
+          user_id: session.user.id,
+          lesson_id,
+          role: 'user',
+          content: message.trim(),
+          created_at: timestamp,
+        },
+        {
+          user_id: session.user.id,
+          lesson_id,
+          role: 'assistant',
+          content: tutorResponse.message,
+          model: tutorResponse.model,
+          created_at: new Date(Date.now() + 10).toISOString(),
+        },
+      ]);
+
+      const adminClient = createAdminSupabaseClient();
+      if (adminClient) {
+        await adminClient.from('usage_events').insert({
+          user_id: session.user.id,
+          provider: 'server-curriculum-tutor',
+          model: tutorResponse.model,
+          tokens_input: message.length,
+          tokens_output: tutorResponse.message.length,
+          estimated_cost_usd: 0,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -39,7 +145,7 @@ export async function POST(req: NextRequest) {
       isCorrect: tutorResponse.isCorrect,
       model: tutorResponse.model,
       lesson_id,
-      timestamp: new Date().toISOString(),
+      timestamp,
     });
   } catch (err: unknown) {
     console.error('Chat API Error:', err);

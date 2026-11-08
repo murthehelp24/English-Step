@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { IBM_Plex_Sans_Thai, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { CloudSyncProvider } from '@/components/auth/CloudSyncProvider';
 import { Navbar } from '@/components/layout/Navbar';
 
 const ibmPlexThai = IBM_Plex_Sans_Thai({
@@ -58,6 +59,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-foreground flex flex-col font-body transition-colors duration-200">
         <ThemeProvider>
+          <CloudSyncProvider />
           <Navbar />
           <main className="flex-1 pb-16">{children}</main>
           <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground bg-background">

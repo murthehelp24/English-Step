@@ -17,19 +17,25 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const history = getChatMessages(lesson.id);
-    if (history.length === 0) {
-      const initial: ChatMessage = {
-        id: 'initial',
-        lesson_id: lesson.id,
-        role: 'assistant',
-        content: `สวัสดีครับ! วันนี้เรามาเรียนเรื่อง "${lesson.title}" กันนะ มีอะไรสงสัย หรืออยากให้ครูช่วยอธิบายจุดไหน ถามได้ตลอดเวลาเลยครับ`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([initial]);
-    } else {
-      setMessages(history);
-    }
+    const loadHistory = () => {
+      const history = getChatMessages(lesson.id);
+      if (history.length === 0) {
+        const initial: ChatMessage = {
+          id: 'initial',
+          lesson_id: lesson.id,
+          role: 'assistant',
+          content: `สวัสดีครับ! วันนี้เรามาเรียนเรื่อง "${lesson.title}" กันนะ มีอะไรสงสัย หรืออยากให้ครูช่วยอธิบายจุดไหน ถามได้ตลอดเวลาเลยครับ`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([initial]);
+      } else {
+        setMessages(history);
+      }
+    };
+
+    loadHistory();
+    window.addEventListener('english_steps_storage_updated', loadHistory);
+    return () => window.removeEventListener('english_steps_storage_updated', loadHistory);
   }, [lesson.id, lesson.title]);
 
   useEffect(() => {
@@ -56,16 +62,15 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
         }),
       });
 
-      const data = await response.json();
-      if (data.content) {
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.content) {
         const assistantMsg = addChatMessage(lesson.id, 'assistant', data.content);
         setMessages((prev) => [...prev, assistantMsg]);
       } else {
-        const errMsg = addChatMessage(
-          lesson.id,
-          'assistant',
-          'ขออภัยครับ เกิดข้อขัดข้องชั่วคราวในการตอบ แต่คุณยังสามารถเรียนบทเรียนและทำแบบฝึกหัดต่อได้ตามปกตินะครับ'
-        );
+        const errText =
+          data.error ||
+          'ขออภัยครับ เกิดข้อขัดข้องชั่วคราวในการตอบ แต่คุณยังสามารถเรียนบทเรียนและทำแบบฝึกหัดต่อได้ตามปกตินะครับ';
+        const errMsg = addChatMessage(lesson.id, 'assistant', errText);
         setMessages((prev) => [...prev, errMsg]);
       }
     } catch (err) {

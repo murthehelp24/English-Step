@@ -53,9 +53,11 @@
    - **Import ข้อมูล (JSON)** สำหรับกู้คืนข้อมูล
    - ล้างข้อมูลเพื่อเริ่มใหม่ (Reset Data)
 
-8. **หน้า Onboarding (`/onboarding`) และ Login (`/login`)**:
-   - ตั้งชื่อ ประเมินพื้นฐานเบื้องต้น และตั้งเวลาเรียน
-   - Login เฉพาะเจ้าของ รองรับทั้ง Local Mode และ Supabase Auth RLS
+8. **ระบบ Login เจ้าของระบบ & Cloud Sync (`/login`, `/onboarding`, `/api/sync`)**:
+   - **Supabase SSR Auth + Middleware Guard (`src/middleware.ts`)**: ป้องกันหน้าเรียนและ API ทุกเส้นทางด้วย cookie session (`@supabase/ssr`)
+   - **ล็อกสิทธิ์เฉพาะเจ้าของ (`OWNER_EMAIL`)**: บัญชีอื่นที่ไม่ตรงกับ `OWNER_EMAIL` จะถูกปฏิเสธอัตโนมัติทั้งในระดับ Middleware, Auth Callback (`/auth/callback`), และ API (`/api/sync`, `/api/chat`)
+   - **ซิงก์ข้อมูลระหว่างเบราว์เซอร์และคลาวด์ (`/api/sync`)**: โหลดและอัปเดตประวัติการเรียน ข้อผิดพลาด ทบทวน งานเขียน แชทกับครู AI และธีมอัตโนมัติ พร้อมระบบสำรองข้อมูล Local เดิมก่อนเข้าสู่ระบบเพื่อให้ผู้ใช้เลือกนำเข้าได้เอง
+   - รองรับ **Onboarding (`/onboarding`)** และ **Local Mode** อัตโนมัติหากยังไม่ได้ตั้งค่าตัวแปร Supabase
 
 ---
 
@@ -95,15 +97,20 @@ npm run start
 
 ### 1. ตั้งค่า Supabase (Database & Auth)
 1. สร้างโปรเจกต์ใหม่ที่ [Supabase](https://supabase.com)
-2. ไปที่ **SQL Editor** แล้วรันไฟล์ Schema Migration:
-   `supabase/migrations/20261108000000_init_english_steps.sql`
-3. คัดลอกค่าจาก Supabase Settings มาใส่ใน `.env.local` (อ้างอิงจาก `.env.example`):
+2. ไปที่ **SQL Editor** แล้วรันไฟล์ Schema Migration ตามลำดับ:
+   - `supabase/migrations/20261108000000_init_english_steps.sql` (โครงสร้างตารางหลัก + RLS Policies + Auto Profile Trigger)
+   - `supabase/migrations/20261108010000_add_saved_vocabulary.sql` *(แนะนำให้รันเพิ่มเติมเพื่อให้ `saved_vocabulary`, `started_at` และประวัติการทบทวนเก็บลงคลาวด์ครบ 100%)*
+3. ตั้งค่า URL ใน Supabase Dashboard → **Authentication** → **URL Configuration**:
+   - เพิ่ม Site URL และ Redirect URLs (เช่น `https://your-app.vercel.app/**` และ `http://localhost:3000/**`)
+4. สร้างบัญชีเจ้าของระบบใน **Authentication → Users** (ให้ตรงกับ `OWNER_EMAIL`)
+5. คัดลอกค่าจาก Supabase Project Settings (**Project URL**, **anon key**, **service_role key**) มาใส่ใน `.env.local` (อ้างอิงจาก `.env.example`):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
    SUPABASE_SERVICE_ROLE_KEY=eyJh...
+   OWNER_EMAIL=owner@example.com
    ```
-4. รันสคริปต์ Seed บทเรียน 112 วันเข้าสู่ฐานข้อมูล Supabase:
+6. รันสคริปต์ Seed บทเรียน 112 วันเข้าสู่ฐานข้อมูล Supabase:
    ```bash
    npx tsx scripts/seed-curriculum.ts
    ```
@@ -136,5 +143,6 @@ npm run start
 | **ระบบ Spaced Repetition (1/3/7/14 วัน)** | ✅ ใช้งานจริง 100% | เลื่อน/ลด stage ตามผลตอบ |
 | **เสียงอ่านบทเรียน (TTS)** | ✅ ใช้งานจริง 100% | ใช้ Web Speech API ในเบราว์เซอร์ ไม่ต้องพึ่งพา API ภายนอก |
 | **Autosave & ประวัติคำตอบ** | ✅ ใช้งานจริง 100% | บันทึกใน LocalStorage ทันที และมี Export/Import JSON |
-| **ครู AI ประจำห้องเรียน** | ✅ ใช้งานจริงในโหมด Intelligent Server Engine | พร้อมเชื่อมต่อ Gemini/OpenAI ทันทีเมื่อใส่ API key |
-| **ฐานข้อมูล Supabase PostgreSQL & Auth** | ⏳ พร้อมโครงสร้าง Migration & Seed Script | มี Local Mode รองรับ รอใส่ URL/Key เมื่อจะขึ้น Cloud |
+| **ระบบป้องกันการเข้าถึง (SSR Auth + Owner Lock)** | ✅ ใช้งานจริง 100% | Middleware, `/auth/callback`, `/api/auth/logout`, ล็อกสิทธิ์ด้วย `OWNER_EMAIL` |
+| **ซิงก์ข้อมูลคลาวด์ Supabase (`/api/sync`)** | ✅ ใช้งานจริง 100% | ซิงก์ Profile, ความคืบหน้า, คำตอบ, ข้อผิดพลาด, Spaced Repetition, แชท และงบ AI รายเดือน |
+| **ครู AI ประจำห้องเรียน (`/api/chat`)** | ✅ ใช้งานจริงในโหมด Server Engine + AI Key | บันทึกแชทและนับโควตาค่าใช้จ่ายรายเดือนลง Supabase พร้อม fallback ในตัว |

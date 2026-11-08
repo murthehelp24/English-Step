@@ -54,17 +54,40 @@ export default function LessonPage({ params }: LessonPageProps) {
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
   useEffect(() => {
-    const prog = getLessonProgress(lesson.id);
-    setProgress(prog);
-    setWritingInput(prog.writing_submission || '');
+    let initialized = false;
+    const syncLessonState = () => {
+      const prog = getLessonProgress(lesson.id);
+      setProgress(prog);
+      if (!initialized) {
+        setWritingInput(prog.writing_submission || '');
+        initialized = true;
+      }
 
-    const vMap: Record<string, boolean> = {};
-    lesson.vocabulary.forEach((v) => {
-      vMap[v.en] = isVocabularySaved(v.en);
-    });
-    setSavedVocabMap(vMap);
+      const vMap: Record<string, boolean> = {};
+      lesson.vocabulary.forEach((v) => {
+        vMap[v.en] = isVocabularySaved(v.en);
+      });
+      setSavedVocabMap(vMap);
+    };
+
+    syncLessonState();
     setCurrentStep(1);
     setCurrentExIndex(0);
+
+    const onCloudOrStorageUpdate = () => {
+      const prog = getLessonProgress(lesson.id);
+      setProgress(prog);
+      setWritingInput((prev) => (prev === '' && prog.writing_submission ? prog.writing_submission : prev));
+
+      const vMap: Record<string, boolean> = {};
+      lesson.vocabulary.forEach((v) => {
+        vMap[v.en] = isVocabularySaved(v.en);
+      });
+      setSavedVocabMap(vMap);
+    };
+
+    window.addEventListener('english_steps_storage_updated', onCloudOrStorageUpdate);
+    return () => window.removeEventListener('english_steps_storage_updated', onCloudOrStorageUpdate);
   }, [lesson.id, lesson.vocabulary]);
 
   const handleToggleVocab = (enWord: string) => {

@@ -1,16 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/theme-provider';
-import { ThemePreference } from '@/types/learning';
+import { StoredAppData, ThemePreference } from '@/types/learning';
 import {
   getStoredData,
   updateProfile,
   exportUserDataAsJSON,
   importUserDataFromJSON,
   resetAllUserData,
+  syncFromCloud,
+  getPendingLocalBackup,
+  importPendingLocalBackupToCloud,
+  clearPendingLocalBackup,
 } from '@/lib/storage';
-import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import {
   Sun,
   Moon,
@@ -21,9 +26,13 @@ import {
   Server,
   Sparkles,
   CheckCircle2,
+  RefreshCw,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState({
     name: 'ผู้เรียน',
@@ -31,19 +40,31 @@ export default function SettingsPage() {
     targetMinutes: 60,
     timezone: 'Asia/Bangkok',
   });
+  const [lastSyncAt, setLastSyncAt] = useState<string | undefined>(undefined);
+  const [pendingBackup, setPendingBackup] = useState<StoredAppData | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    const data = getStoredData();
-    if (data.profile) {
-      setProfile({
-        name: data.profile.name || 'ผู้เรียน',
-        email: data.profile.email || 'owner@englishsteps.local',
-        targetMinutes: data.profile.target_minutes || 60,
-        timezone: data.profile.timezone || 'Asia/Bangkok',
-      });
-    }
+    const load = () => {
+      const data = getStoredData();
+      if (data.profile) {
+        setProfile({
+          name: data.profile.name || 'ผู้เรียน',
+          email: data.profile.email || 'owner@englishsteps.local',
+          targetMinutes: data.profile.target_minutes || 60,
+          timezone: data.profile.timezone || 'Asia/Bangkok',
+        });
+      }
+      setLastSyncAt(data.last_sync_at);
+      setPendingBackup(getPendingLocalBackup());
+    };
+
+    load();
+    window.addEventListener('english_steps_storage_updated', load);
+    return () => window.removeEventListener('english_steps_storage_updated', load);
   }, []);
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -55,6 +76,40 @@ export default function SettingsPage() {
     });
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    const res = await syncFromCloud();
+    setIsSyncing(false);
+    setSyncMessage(
+      res.ok
+        ? 'ซิงก์ข้อมูลล่าสุดจาก Supabase เรียบร้อยแล้ว'
+        : 'ยังไม่สามารถซิงก์จาก Supabase ได้ กรุณาตรวจสอบการเข้าสู่ระบบ'
+    );
+  };
+
+  const handleImportLegacyBackup = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    const ok = await importPendingLocalBackupToCloud();
+    setIsSyncing(false);
+    setSyncMessage(
+      ok
+        ? 'นำเข้าข้อมูลเดิมจากเครื่องขึ้นบัญชี Supabase สำเร็จแล้ว'
+        : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลเดิมขึ้น Supabase'
+    );
+  };
+
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    await fetch('/api/auth/logout', { method: 'POST' });
+    resetAllUserData({ localOnly: true });
+    router.push('/login');
+    router.refresh();
   };
 
   const handleExportData = () => {
@@ -104,9 +159,87 @@ export default function SettingsPage() {
           ตั้งค่าและข้อมูลบัญชี
         </h1>
         <p className="text-base text-muted-foreground max-w-xl leading-relaxed">
-          จัดการธีมการแสดงผล เวลาเรียนเป้าหมาย การสำรองข้อมูล และตรวจสอบสถานะการเชื่อมต่อระบบ
+          จัดการบัญชีเจ้าของ การซิงก์ฐานข้อมูล ธีมการแสดงผล เวลาเรียนเป้าหมาย และการสำรองข้อมูล
         </p>
       </div>
+
+      {/* Owner Account & Cloud Sync Section */}
+      {isSupabaseConfigured && (
+        <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 text-sm font-extrabold text-review-accent">
+                <ShieldCheck className="w-4 h-4" />
+                <span>บัญชีเจ้าของระบบ (Supabase Auth + RLS)</span>
+              </div>
+              <div className="text-lg font-extrabold text-foreground font-display">
+                {profile.email}
+              </div>
+              {lastSyncAt && (
+                <div className="text-xs font-medium text-muted-foreground">
+                  ซิงก์ล่าสุด: {new Date(lastSyncAt).toLocaleString('th-TH')}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-2 bg-background text-foreground px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-85 disabled:opacity-50 transition-opacity"
+              >
+                <RefreshCw className={`w-4 h-4 text-review-accent ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'กำลังซิงก์...' : 'ซิงก์ข้อมูลล่าสุด'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-2 bg-error-bg text-error px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-85 transition-opacity"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>ออกจากระบบ</span>
+              </button>
+            </div>
+          </div>
+
+          {syncMessage && (
+            <div className="p-3.5 bg-background rounded-xl text-sm font-bold text-foreground">
+              {syncMessage}
+            </div>
+          )}
+
+          {/* Explicit user opt-in for pre-login local progress */}
+          {pendingBackup && (
+            <div className="p-5 bg-lesson-surface rounded-xl space-y-3">
+              <div className="text-base font-extrabold text-foreground">
+                พบประวัติการเรียนที่เคยบันทึกไว้ในเบราว์เซอร์นี้ก่อนเข้าสู่ระบบ
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                พบ {Object.keys(pendingBackup.lessons_progress || {}).length} บทเรียนที่มีความคืบหน้า คุณต้องการนำเข้าขึ้นบัญชี Supabase ของคุณหรือไม่?
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleImportLegacyBackup}
+                  disabled={isSyncing}
+                  className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-extrabold hover:brightness-105 disabled:opacity-50"
+                >
+                  นำเข้าข้อมูลเดิมขึ้น Supabase
+                </button>
+                <button
+                  type="button"
+                  onClick={() => clearPendingLocalBackup()}
+                  className="bg-background text-muted-foreground hover:text-foreground px-4 py-2.5 rounded-xl text-sm font-bold"
+                >
+                  ไม่นำเข้า (ซ่อนข้อความนี้)
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Theme Settings Section */}
       <section className="p-6 sm:p-8 bg-surface rounded-2xl space-y-5">
@@ -275,7 +408,7 @@ export default function SettingsPage() {
             สถานะการเชื่อมต่อบริการ
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            รายละเอียดความพร้อมของระบบที่ใช้งานได้ทันทีและบริการเสริมบนคลาวด์
+            รายละเอียดความพร้อมของระบบที่ใช้งานได้ทันทีและบริการบนคลาวด์
           </p>
         </div>
 
@@ -286,11 +419,11 @@ export default function SettingsPage() {
               <Server className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
               <div>
                 <div className="text-base font-bold text-foreground">
-                  ฐานข้อมูล Supabase (PostgreSQL & Auth)
+                  ฐานข้อมูล Supabase (PostgreSQL, Auth & RLS)
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {isSupabaseConfigured
-                    ? 'เชื่อมต่อฐานข้อมูล Supabase แล้ว'
+                    ? 'เชื่อมต่อฐานข้อมูล Supabase และระบบล็อกอินเจ้าของแล้ว'
                     : 'โหมดใช้งานในเครื่อง (Local Storage พร้อมใช้งานทันที)'}
                 </div>
               </div>
@@ -315,7 +448,7 @@ export default function SettingsPage() {
                   ครู AI ภาษาอังกฤษ (AI Tutor)
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  ระบบ Intelligent Curriculum Tutor ใน Server พร้อมตอบตามบทเรียนและคำศัพท์
+                  ระบบ Intelligent Curriculum Tutor ใน Server พร้อมบันทึกแชตแยกตามบทและตรวจสิทธิ์เจ้าของ
                 </div>
               </div>
             </div>

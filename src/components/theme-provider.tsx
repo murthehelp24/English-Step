@@ -1,18 +1,21 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ThemePreference } from '@/types/learning';
+import { updateProfile } from '@/lib/storage';
 
 interface ThemeContextType {
   theme: ThemePreference;
   resolvedTheme: 'light' | 'dark';
   setTheme: (theme: ThemePreference) => void;
+  applySyncedTheme: (theme: ThemePreference) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: 'system',
   resolvedTheme: 'light',
   setTheme: () => {},
+  applySyncedTheme: () => {},
 });
 
 const THEME_STORAGE_KEY = 'english_steps_theme';
@@ -22,7 +25,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    // 1. Read stored preference from localStorage
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as ThemePreference | null;
     if (saved && (saved === 'light' || saved === 'dark' || saved === 'system')) {
       setThemeState(saved);
@@ -60,17 +62,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme]);
 
-  const setTheme = (newTheme: ThemePreference) => {
-    setThemeState(newTheme);
+  const applySyncedTheme = useCallback((syncedTheme: ThemePreference) => {
+    setThemeState(syncedTheme);
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      localStorage.setItem(THEME_STORAGE_KEY, syncedTheme);
     } catch {
-      // Storage access may be restricted in some contexts
+      // Ignore storage error
     }
-  };
+  }, []);
+
+  const setTheme = useCallback(
+    (newTheme: ThemePreference) => {
+      applySyncedTheme(newTheme);
+      updateProfile({ theme_preference: newTheme });
+    },
+    [applySyncedTheme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, applySyncedTheme }}>
       {children}
     </ThemeContext.Provider>
   );
