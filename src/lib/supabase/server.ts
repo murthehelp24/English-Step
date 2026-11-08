@@ -13,11 +13,21 @@ export const isServerSupabaseConfigured = Boolean(
     !supabaseAnonKey.includes('your_supabase')
 );
 
+export function isMultiUserEnabled(): boolean {
+  return (process.env.ALLOW_MULTI_USER || '').trim().toLowerCase() === 'true';
+}
+
 export function isOwnerEmail(email?: string | null): boolean {
   const ownerEmail = (process.env.OWNER_EMAIL || '').trim().toLowerCase();
   if (!ownerEmail) return Boolean(email);
   if (!email) return false;
   return email.trim().toLowerCase() === ownerEmail;
+}
+
+export function isAuthorizedUser(email?: string | null): boolean {
+  if (!email) return false;
+  if (isMultiUserEnabled()) return true;
+  return isOwnerEmail(email);
 }
 
 export async function createServerSupabaseClient() {
@@ -63,6 +73,8 @@ export async function getVerifiedOwnerSession() {
       supabase: null,
       user: null,
       isOwner: true,
+      isAuthorized: true,
+      role: 'owner' as const,
     };
   }
 
@@ -73,6 +85,8 @@ export async function getVerifiedOwnerSession() {
       supabase: null,
       user: null,
       isOwner: false,
+      isAuthorized: false,
+      role: 'learner' as const,
     };
   }
 
@@ -87,15 +101,20 @@ export async function getVerifiedOwnerSession() {
       supabase,
       user: null,
       isOwner: false,
+      isAuthorized: false,
+      role: 'learner' as const,
     };
   }
 
   const owner = isOwnerEmail(user.email);
+  const authorized = isAuthorizedUser(user.email);
 
   return {
     configured: true as const,
     supabase,
     user,
     isOwner: owner,
+    isAuthorized: authorized,
+    role: (owner ? 'owner' : 'learner') as 'owner' | 'learner',
   };
 }

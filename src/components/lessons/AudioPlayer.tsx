@@ -10,9 +10,11 @@ interface AudioPlayerProps {
   slowRate?: boolean;
 }
 
+const SPEED_OPTIONS = [0.75, 0.9, 1.0] as const;
+
 export function AudioPlayer({ text, label = 'ฟังเสียงอ่าน', slowRate = false }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [rate, setRate] = useState<number>(slowRate ? 0.75 : 0.85);
+  const [rate, setRate] = useState<number>(slowRate ? 0.75 : 0.9);
   const [supported, setSupported] = useState(true);
 
   useEffect(() => {
@@ -34,12 +36,13 @@ export function AudioPlayer({ text, label = 'ฟังเสียงอ่า�
     });
   };
 
-  const toggleRate = () => {
-    const newRate = rate === 0.75 ? 1.0 : 0.75;
-    setRate(newRate);
+  const cycleRate = () => {
+    const currentIndex = SPEED_OPTIONS.findIndex((r) => Math.abs(r - rate) < 0.05);
+    const nextRate = SPEED_OPTIONS[(currentIndex + 1) % SPEED_OPTIONS.length];
+    setRate(nextRate);
     if (isPlaying) {
       speechService.speak(text, {
-        rate: newRate,
+        rate: nextRate,
         onStart: () => setIsPlaying(true),
         onEnd: () => setIsPlaying(false),
         onError: () => setIsPlaying(false),
@@ -55,6 +58,9 @@ export function AudioPlayer({ text, label = 'ฟังเสียงอ่า�
       </div>
     );
   }
+
+  const rateLabel =
+    rate <= 0.76 ? 'ช้า 0.75x' : rate <= 0.92 ? 'กลาง 0.9x' : 'ปกติ 1.0x';
 
   return (
     <div className="inline-flex items-center gap-2 bg-surface px-3.5 py-2 rounded-xl text-sm">
@@ -79,15 +85,15 @@ export function AudioPlayer({ text, label = 'ฟังเสียงอ่า�
 
       <span className="w-px h-4 bg-border" />
 
-      {/* Speed Rate Toggle */}
+      {/* Speed Rate Cycle (0.75x -> 0.9x -> 1.0x) */}
       <button
         type="button"
-        onClick={toggleRate}
-        className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-1"
-        title="สลับความเร็วเสียง (ช้า / ปกติ)"
-        aria-label={`ความเร็วเสียง: ${rate === 0.75 ? 'ช้า 0.75x' : 'ปกติ 1.0x'}`}
+        onClick={cycleRate}
+        className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-1 whitespace-nowrap"
+        title="สลับความเร็วเสียง (ช้า 0.75x / กลาง 0.9x / ปกติ 1.0x)"
+        aria-label={`ความเร็วเสียง: ${rateLabel}`}
       >
-        {rate === 0.75 ? 'ช้า 0.75x' : 'ปกติ 1.0x'}
+        {rateLabel}
       </button>
     </div>
   );

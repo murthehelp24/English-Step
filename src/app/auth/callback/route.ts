@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerSupabaseClient, isOwnerEmail } from '@/lib/supabase/server';
+import { createServerSupabaseClient, isAuthorizedUser } from '@/lib/supabase/server';
 
 function getSafeNextPath(nextParam: string | null): string {
   if (!nextParam) return '/';
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user || !isOwnerEmail(user.email)) {
+        if (!user || !isAuthorizedUser(user.email)) {
           await supabase.auth.signOut();
           return NextResponse.redirect(`${origin}/login?error=unauthorized`);
         }

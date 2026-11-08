@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getLessonById } from '@/lib/curriculum';
+import { getLessonSummaryById } from '@/lib/curriculum';
 import { getVerifiedOwnerSession } from '@/lib/supabase/server';
 import { generateUuid, isValidUuid } from '@/lib/uuid';
 import {
   ChatMessage,
   ExerciseAttempt,
+  ExperienceLevel,
   LessonProgress,
   MistakeItem,
   ReviewItem,
   StoredAppData,
   ThemePreference,
+  UserRole,
 } from '@/types/learning';
 
 const ProfileUpdateSchema = z.object({
@@ -22,6 +24,8 @@ const ProfileUpdateSchema = z.object({
     theme_preference: z.enum(['light', 'dark', 'system']).optional(),
     onboarding_completed: z.boolean().optional(),
     started_at: z.string().optional(),
+    experience_level: z.enum(['zero', 'beginner', 'intermediate']).optional(),
+    learning_goal: z.string().max(100).optional(),
   }),
 });
 
@@ -120,6 +124,8 @@ const ImportFullDataSchema = z.object({
         target_minutes: z.number().optional(),
         theme_preference: z.enum(['light', 'dark', 'system']).optional(),
         onboarding_completed: z.boolean().optional(),
+        experience_level: z.enum(['zero', 'beginner', 'intermediate']).optional(),
+        learning_goal: z.string().optional(),
       })
       .optional(),
     lessons_progress: z.record(z.string(), z.any()).optional(),
@@ -158,9 +164,9 @@ export async function GET() {
       return NextResponse.json({ mode: 'local', configured: false });
     }
     if (!session.user) {
-      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบเจ้าของ' }, { status: 401 });
+      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบก่อนใช้งาน' }, { status: 401 });
     }
-    if (!session.isOwner) {
+    if (!session.isAuthorized) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงระบบ' }, { status: 403 });
     }
 
@@ -199,7 +205,6 @@ export async function GET() {
         .order('created_at', { ascending: true }),
     ]);
 
-    // Ensure profile exists if user was created before trigger
     let profileRow = profileRes.data;
     if (!profileRow && !profileRes.error) {
       const { data: insertedProfile } = await sb
@@ -259,7 +264,7 @@ export async function GET() {
     const mistakes: MistakeItem[] = (mistakesRes.data || []).map((row) => ({
       id: row.id,
       lesson_id: row.lesson_id,
-      lesson_title: getLessonById(row.lesson_id)?.title || row.lesson_id,
+      lesson_title: getLessonSummaryById(row.lesson_id)?.title || row.lesson_id,
       exercise_id: row.exercise_id,
       prompt: row.prompt,
       original_answer: row.original_answer,
@@ -306,6 +311,9 @@ export async function GET() {
         id: userId,
         name: profileRow?.name || 'ผู้เรียน',
         email: profileRow?.email || session.user.email || '',
+        role: (profileRow?.role || session.role) as UserRole,
+        experience_level: (profileRow?.experience_level || 'zero') as ExperienceLevel,
+        learning_goal: profileRow?.learning_goal || 'comprehensive',
         timezone: profileRow?.timezone || 'Asia/Bangkok',
         target_minutes: profileRow?.target_minutes || 60,
         theme_preference: (profileRow?.theme_preference || 'system') as ThemePreference,
@@ -345,9 +353,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ mode: 'local', synced: false });
     }
     if (!session.user) {
-      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบเจ้าของ' }, { status: 401 });
+      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบก่อนใช้งาน' }, { status: 401 });
     }
-    if (!session.isOwner) {
+    if (!session.isAuthorized) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงระบบ' }, { status: 403 });
     }
 
@@ -379,10 +387,27 @@ export async function POST(req: NextRequest) {
           updateFields.theme_preference = payload.updates.theme_preference;
         if (payload.updates.onboarding_completed !== undefined)
           updateFields.onboarding_completed = payload.updates.onboarding_completed;
+        if (payload.updates.started_at !== undefined)
+          updateFields.started_at = payload.updates.started_at;
+        if (payload.updates.experience_level !== undefined)
+          updateFields.experience_level = payload.updates.experience_level;
+        if (payload.updates.learning_goal !== undefined)
+          updateFields.learning_goal = payload.updates.learning_goal;
 
-        const { error } = await sb
+        let { error } = await sb
           .from('profiles')
           .upsert(updateFields, { onConflict: 'id' });
+
+        // Fallback gracefully if optional migration columns aren't added yet in SQL Editor
+        if (error && isMissingColumnError(error)) {
+          delete updateFields.started_at;
+          delete updateFields.experience_level;
+          delete updateFields.learning_goal;
+          const retry = await sb
+            .from('profiles')
+            .upsert(updateFields, { onConflict: 'id' });
+          error = retry.error;
+        }
         if (error) throw error;
         return NextResponse.json({ synced: true });
       }
@@ -590,7 +615,7 @@ export async function POST(req: NextRequest) {
           const attemptRows: Record<string, unknown>[] = [];
 
           for (const [lessonId, prog] of Object.entries(data.lessons_progress)) {
-            if (!getLessonById(lessonId) || !prog || typeof prog !== 'object') continue;
+            if (!getLessonSummaryById(lessonId) || !prog || typeof prog !== 'object') continue;
             const p = prog as LessonProgress;
             progressRows.push({
               user_id: userId,
@@ -635,7 +660,7 @@ export async function POST(req: NextRequest) {
           const mistakeRows: Record<string, unknown>[] = [];
           for (const rawMistake of data.mistakes) {
             const m = rawMistake as MistakeItem;
-            if (!m || !getLessonById(m.lesson_id)) continue;
+            if (!m || !getLessonSummaryById(m.lesson_id)) continue;
             const mappedId = isValidUuid(m.id) ? m.id : generateUuid();
             mistakeIdMap[m.id] = mappedId;
             mistakeRows.push({
@@ -661,7 +686,7 @@ export async function POST(req: NextRequest) {
           const reviewRows: Record<string, unknown>[] = [];
           for (const rawRev of data.review_items) {
             const r = rawRev as ReviewItem;
-            if (!r || !getLessonById(r.lesson_id)) continue;
+            if (!r || !getLessonSummaryById(r.lesson_id)) continue;
             const mappedMistakeId =
               mistakeIdMap[r.mistake_id] ||
               (isValidUuid(r.mistake_id) ? r.mistake_id : null);
@@ -688,7 +713,7 @@ export async function POST(req: NextRequest) {
         if (data.chat_messages) {
           const msgRows: Record<string, unknown>[] = [];
           for (const [lessonId, list] of Object.entries(data.chat_messages)) {
-            if (!getLessonById(lessonId) || !Array.isArray(list)) continue;
+            if (!getLessonSummaryById(lessonId) || !Array.isArray(list)) continue;
             for (const rawMsg of list) {
               const msg = rawMsg as ChatMessage;
               if (!msg || !msg.content) continue;

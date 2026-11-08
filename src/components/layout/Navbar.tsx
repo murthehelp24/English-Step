@@ -76,12 +76,12 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'หน้าแรก' },
-    { href: '/weeks', label: 'บทเรียน 16 สัปดาห์' },
+    { href: '/weeks', label: 'บทเรียน 36 โมดูล' },
     {
       href: '/review',
       label: dueReviewsCount > 0 ? `ทบทวน (${dueReviewsCount})` : 'ทบทวน',
     },
-    { href: '/vocabulary', label: 'คำศัพท์' },
+    { href: '/vocabulary', label: 'คำศัพท์ & Chunks' },
     { href: '/progress', label: 'พัฒนาการ' },
   ];
 
@@ -138,7 +138,7 @@ export function Navbar() {
               href={`/lessons/day-${String(currentDay).padStart(3, '0')}`}
               className="hidden sm:inline-flex items-center px-3.5 py-1.5 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
             >
-              วันที่ {currentDay} / 112
+              วันที่ {currentDay} / 252
             </Link>
           )}
 

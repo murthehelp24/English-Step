@@ -19,6 +19,9 @@ const DEFAULT_PROFILE: UserProfile = {
   id: 'local-owner',
   name: 'ผู้เรียน',
   email: 'owner@englishsteps.local',
+  role: 'owner',
+  experience_level: 'zero',
+  learning_goal: 'comprehensive',
   timezone: 'Asia/Bangkok',
   target_minutes: 60,
   theme_preference: 'system',
@@ -218,6 +221,8 @@ export function updateProfile(
         theme_preference: updates.theme_preference,
         onboarding_completed: updates.onboarding_completed,
         started_at: updates.started_at,
+        experience_level: updates.experience_level,
+        learning_goal: updates.learning_goal,
       },
     });
   }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateProfile } from '@/lib/storage';
+import { ExperienceLevel } from '@/types/learning';
 import { ArrowRight, Globe, CheckCircle2 } from 'lucide-react';
 
 export default function OnboardingPage() {
@@ -10,12 +11,15 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [targetMinutes, setTargetMinutes] = useState(60);
-  const [experienceLevel, setExperienceLevel] = useState('beginner');
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('zero');
+  const [learningGoal, setLearningGoal] = useState('comprehensive');
 
   const handleFinish = () => {
     updateProfile({
       name: name.trim() || 'ผู้เรียน',
       target_minutes: targetMinutes,
+      experience_level: experienceLevel,
+      learning_goal: learningGoal,
       timezone: 'Asia/Bangkok',
       onboarding_completed: true,
       started_at: new Date().toISOString(),
@@ -32,7 +36,7 @@ export default function OnboardingPage() {
             ขั้นตอนที่ {step} จาก 2
           </span>
           <span className="text-sm font-semibold text-muted-foreground">
-            ตั้งค่าพื้นที่เรียนส่วนตัว
+            ตั้งค่าแผนเรียน Master Track 252 วัน
           </span>
         </div>
 
@@ -43,7 +47,7 @@ export default function OnboardingPage() {
                 ยินดีต้อนรับสู่ English Steps
               </h1>
               <p className="text-base text-muted-foreground mt-2 leading-relaxed">
-                หลักสูตรภาษาอังกฤษส่วนตัว 112 วัน เรียนรู้ทีละก้าว อ่านง่าย ไม่กดดัน
+                หลักสูตรภาษาอังกฤษ 252 วัน (6 Phases · 36 Modules) เริ่มจากพื้นฐานระดับศูนย์สู่การสื่อสาร ฟัง พูด อ่าน และเขียนในชีวิตจริงอย่างมั่นใจ (ไม่เน้นติวข้อสอบ)
               </p>
             </div>
 
@@ -65,10 +69,23 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-bold text-foreground mb-2">
                   พื้นฐานภาษาอังกฤษในปัจจุบัน
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {[
-                    { id: 'zero', title: 'เริ่มจากศูนย์จริงๆ', desc: 'แทบจำตัวอักษรหรือคำไม่ได้' },
-                    { id: 'beginner', title: 'พอจำคำศัพท์ง่ายๆ ได้', desc: 'แต่อยากเริ่มจัดระบบใหม่ตั้งแต่ต้น' },
+                    {
+                      id: 'zero' as const,
+                      title: 'เริ่มจาก 0 จริงๆ',
+                      desc: 'เริ่ม Phase 0 ระบบเสียง IPA & โครงสร้างฐานศูนย์',
+                    },
+                    {
+                      id: 'beginner' as const,
+                      title: 'พอรู้ศัพท์พื้นฐาน',
+                      desc: 'อยากจัดระเบียบใหม่ให้ฟังพูดได้จริง',
+                    },
+                    {
+                      id: 'intermediate' as const,
+                      title: 'พออ่านได้บ้าง',
+                      desc: 'อยากเสริมความคล่อง พูดทำงาน และแก้จุดพลาดไทย',
+                    },
                   ].map((item) => (
                     <button
                       type="button"
@@ -81,7 +98,9 @@ export default function OnboardingPage() {
                       }`}
                     >
                       <div className="text-base font-extrabold text-foreground">{item.title}</div>
-                      <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{item.desc}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
+                        {item.desc}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -103,10 +122,10 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-3xl font-extrabold tracking-tight text-foreground">
-                จัดเวลาเรียนของคุณ
+                เป้าหมายและเวลาเรียนต่อวัน
               </h2>
               <p className="text-base text-muted-foreground mt-2 leading-relaxed">
-                เรียนวันละนิด สม่ำเสมอ ไม่ต้องรีบจบในวันเดียว
+                ออกแบบตามหลักสมดุล 4 แกน (Input · โครงสร้าง · Output · ความคล่อง 4/3/2) เพื่อผลลัพธ์ระยะยาว
               </p>
             </div>
 
@@ -116,7 +135,7 @@ export default function OnboardingPage() {
                   เวลาที่ตั้งใจเรียนต่อวัน
                 </label>
                 <div className="grid grid-cols-3 gap-3.5">
-                  {[30, 45, 60].map((mins) => (
+                  {[30, 60, 90].map((mins) => (
                     <button
                       type="button"
                       key={mins}
@@ -131,7 +150,45 @@ export default function OnboardingPage() {
                         {mins} นาที
                       </div>
                       <div className="text-xs font-semibold text-muted-foreground mt-1">
-                        {mins === 60 ? 'แนะนำตามหลักสูตร' : 'ปรับตามสะดวก'}
+                        {mins === 60
+                          ? 'แนะนำตามหลักสูตร'
+                          : mins === 30
+                          ? 'วันที่ยุ่ง'
+                          : 'เร่งสปีดความคล่อง'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-foreground mb-2">
+                  เป้าหมายหลักของการใช้ภาษา
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      id: 'comprehensive',
+                      title: 'ครบทุกด้านในชีวิตจริง & งาน',
+                      desc: 'คุยต่างชาติ เที่ยว ดูหนัง อ่านบทความ และสื่อสารทำงาน',
+                    },
+                    {
+                      id: 'confidence_speaking',
+                      title: 'เน้นฟังทัน พูดคล่อง ไม่กลัวผิด',
+                      desc: 'ฝึก Shadowing + พูด 4/3/2 เพื่อเปลี่ยนความรู้เป็นความคล่อง',
+                    },
+                  ].map((g) => (
+                    <button
+                      type="button"
+                      key={g.id}
+                      onClick={() => setLearningGoal(g.id)}
+                      className={`p-4 rounded-xl bg-background text-left transition-all ${
+                        learningGoal === g.id ? 'ring-2 ring-accent' : 'hover:opacity-90'
+                      }`}
+                    >
+                      <div className="text-sm font-extrabold text-foreground">{g.title}</div>
+                      <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        {g.desc}
                       </div>
                     </button>
                   ))}
@@ -144,7 +201,7 @@ export default function OnboardingPage() {
                   <span>เขตเวลา: Asia/Bangkok (ประเทศไทย)</span>
                 </div>
                 <div className="text-sm text-muted-foreground leading-relaxed">
-                  วันเรียนและระบบทบทวน Spaced Repetition จะคำนวณตามเวลาท้องถิ่นของประเทศไทย
+                  ระบบทบทวน Spaced Repetition (1/3/7/14 วัน) และประวัติการเรียนทั้งหมดจะถูกซิงก์เข้าบัญชีของคุณโดยอัตโนมัติ
                 </div>
               </div>
             </div>
@@ -163,7 +220,7 @@ export default function OnboardingPage() {
                 onClick={handleFinish}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-extrabold text-base px-7 py-3.5 rounded-xl hover:brightness-105 active:scale-[0.99] transition-all"
               >
-                <span>เริ่มเรียนบทเรียนแรก</span>
+                <span>เริ่มเรียนวันที่ 1 (Phase 0)</span>
                 <CheckCircle2 className="w-5 h-5" />
               </button>
             </div>

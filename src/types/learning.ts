@@ -1,9 +1,15 @@
 export type ThemePreference = 'light' | 'dark' | 'system';
 
+export type UserRole = 'owner' | 'learner';
+export type ExperienceLevel = 'zero' | 'beginner' | 'intermediate';
+
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  role?: UserRole;
+  experience_level?: ExperienceLevel;
+  learning_goal?: string;
   timezone: string;
   target_minutes: number;
   theme_preference: ThemePreference;

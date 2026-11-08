@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getLessonById } from '@/lib/curriculum';
+import { getServerLessonById } from '@/lib/curriculum-server';
 import { generateTutorResponse } from '@/lib/ai/tutor-engine';
 import {
   createAdminSupabaseClient,
@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
     if (session.configured) {
       if (!session.user) {
         return NextResponse.json(
-          { error: 'กรุณาเข้าสู่ระบบเจ้าของก่อนใช้งานครู AI' },
+          { error: 'กรุณาเข้าสู่ระบบก่อนใช้งานครู AI' },
           { status: 401 }
         );
       }
-      if (!session.isOwner) {
+      if (!session.isAuthorized) {
         return NextResponse.json(
-          { error: 'บัญชีนี้ไม่มีสิทธิ์ใช้งานครู AI (เฉพาะเจ้าของระบบ)' },
+          { error: 'บัญชีนี้ไม่มีสิทธิ์ใช้งานครู AI' },
           { status: 403 }
         );
       }
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const { lesson_id, message, history } = parsed.data;
 
-    const lesson = getLessonById(lesson_id);
+    const lesson = await getServerLessonById(lesson_id);
     if (!lesson) {
       return NextResponse.json({ error: 'ไม่พบบทเรียนที่ระบุ' }, { status: 404 });
     }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       // Future external provider call can be plugged in here without exposing keys to client
     }
 
-    // Server-side Intelligent Curriculum Tutor engine (reliable, zero-cost, context-aware)
+    // Server-side Intelligent Curriculum Tutor v2 (IPA + Thai L1 + Lexical Chunks + Grammar Self-Check)
     const tutorResponse = generateTutorResponse(
       lesson,
       message,
@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
 
     const timestamp = new Date().toISOString();
 
-    // Persist chat history & usage event to Supabase when authenticated
     if (session.configured && session.supabase && session.user) {
       await session.supabase.from('messages').insert([
         {

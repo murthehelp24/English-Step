@@ -64,10 +64,9 @@ export default function TodayPage() {
   const currentLesson = allLessons.find((l) => l.day === currentDayNumber) || allLessons[0];
   const currentWeekLessons = getLessonsByWeek(currentLesson?.week || 1);
 
-  const mainExample = currentLesson?.examples?.[0];
   const headlineEnglish =
-    mainExample?.en || currentLesson?.reading?.split('.')[0] + '.' || 'Hello, World.';
-  const headlineThai = mainExample?.th || currentLesson?.title || '';
+    currentLesson?.headlineEnglish || 'Hello, World.';
+  const headlineThai = currentLesson?.headlineThai || currentLesson?.title || '';
 
   return (
     <div className="max-w-6xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
@@ -77,11 +76,16 @@ export default function TodayPage() {
         <article className="lg:col-span-8 bg-lesson-surface rounded-2xl p-7 sm:p-10 flex flex-col justify-between gap-7">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
-                สัปดาห์ที่ {currentLesson?.week} • วันที่ {currentLesson?.day}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
+                  Phase {currentLesson?.phase ?? 0} • {currentLesson?.cefr_level || 'Pre-A1'}
+                </span>
+                <span className="inline-block px-3 py-1 rounded-full bg-background text-foreground text-xs font-bold border border-border">
+                  สัปดาห์ที่ {currentLesson?.week} • วันที่ {currentLesson?.day} / 252
+                </span>
+              </div>
               <span className="text-sm font-semibold text-muted-foreground">
-                ประมาณ {currentLesson?.minutes || 60} นาที
+                ประมาณ {currentLesson?.minutes || 60} นาที / วัน
               </span>
             </div>
 
@@ -96,7 +100,7 @@ export default function TodayPage() {
           {/* Highlighted Example Sentence White Card */}
           <div className="bg-background rounded-xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="text-xs font-bold text-muted-foreground">ประโยคสำคัญวันนี้</div>
+              <div className="text-xs font-bold text-muted-foreground">ประโยคสำคัญประจำบทเรียน</div>
               <div className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mt-1">
                 {headlineEnglish}
               </div>
@@ -114,7 +118,7 @@ export default function TodayPage() {
           {/* Bottom Summary & Primary CTA Button */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
             <div className="text-sm font-semibold text-muted-foreground">
-              4 กิจกรรม: อธิบาย · ศัพท์ {currentLesson?.vocabulary?.length || 0} คำ · แบบฝึก {currentLesson?.exercises?.length || 0} ข้อ · เขียนสั้นๆ
+              ครบ 4 แกน: เสียง & IPA · ศัพท์ {currentLesson?.vocabCount || 6} คำ + Chunks · แบบฝึก {currentLesson?.exerciseCount || 8} ข้อ · ฝึกพูด 4/3/2
             </div>
 
             <Link
@@ -131,7 +135,7 @@ export default function TodayPage() {
         <aside className="lg:col-span-4 bg-review-surface rounded-2xl p-7 sm:p-8 flex flex-col justify-between gap-6">
           <div className="space-y-4">
             <div className="text-sm font-extrabold text-review-accent">
-              ทบทวนข้อที่เคยผิด
+              ทบทวนข้อที่เคยผิด (Spaced Repetition)
             </div>
             <h2 className="text-2xl font-extrabold text-foreground">
               {dueCount > 0
@@ -141,7 +145,7 @@ export default function TodayPage() {
                 : 'พร้อมฝึกทบทวน'}
             </h2>
             <p className="text-base text-muted-foreground leading-relaxed">
-              หยิบคำที่เคยเขียนผิดมาลองฝึกใหม่ตามรอบ 1, 3, 7 และ 14 วัน จะได้จำได้แม่นขึ้น
+              ฝึกซ้ำตามรอบ 1, 3, 7, 14, และ 30 วัน เพื่อแก้จุดผิดเฉพาะคนไทยและเปลี่ยนเป็นความแม่นยำอัตโนมัติ
             </p>
 
             {/* Mistake vs Correction White Card */}
@@ -175,7 +179,7 @@ export default function TodayPage() {
             href="/weeks"
             className="text-sm font-bold text-accent hover:underline"
           >
-            ดูครบทั้ง 16 สัปดาห์ →
+            ดูครบทั้ง 36 สัปดาห์ (6 Phases / 252 วัน) →
           </Link>
         </div>
 

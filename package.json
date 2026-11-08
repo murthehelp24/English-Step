@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "curriculum:build": "tsx scripts/curriculum/build-master.ts",
+    "curriculum:seed": "tsx scripts/seed-curriculum.ts",
+    "test:curriculum": "tsx tests/curriculum.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

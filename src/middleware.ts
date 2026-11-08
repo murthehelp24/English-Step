@@ -12,11 +12,21 @@ const isSupabaseEnabled = Boolean(
     !supabaseAnonKey.includes('your_supabase')
 );
 
+function isMultiUserEnabled(): boolean {
+  return (process.env.ALLOW_MULTI_USER || '').trim().toLowerCase() === 'true';
+}
+
 function isOwnerEmail(email?: string | null): boolean {
   const ownerEmail = (process.env.OWNER_EMAIL || '').trim().toLowerCase();
   if (!ownerEmail) return Boolean(email);
   if (!email) return false;
   return email.trim().toLowerCase() === ownerEmail;
+}
+
+function isAuthorizedUser(email?: string | null): boolean {
+  if (!email) return false;
+  if (isMultiUserEnabled()) return true;
+  return isOwnerEmail(email);
 }
 
 function getSafeNextPath(nextParam: string | null): string {
@@ -81,8 +91,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Authenticated with non-owner email -> revoke/block access
-  if (user && !isOwnerEmail(user.email)) {
+  const authorized = user ? isAuthorizedUser(user.email) : false;
+
+  // Authenticated with unauthorized email (when private owner mode is active) -> block access
+  if (user && !authorized) {
     if (!isPublicPage) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
@@ -92,8 +104,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Authorized owner visiting /login -> send straight to dashboard or requested page
-  if (user && isOwnerEmail(user.email) && pathname === '/login') {
+  // Authorized user visiting /login -> send straight to dashboard or requested page
+  if (user && authorized && pathname === '/login') {
     const nextPath = getSafeNextPath(request.nextUrl.searchParams.get('next'));
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = nextPath === '/login' ? '/' : nextPath;

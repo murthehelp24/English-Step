@@ -24,7 +24,7 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
           id: 'initial',
           lesson_id: lesson.id,
           role: 'assistant',
-          content: `สวัสดีครับ! วันนี้เรามาเรียนเรื่อง "${lesson.title}" กันนะ มีอะไรสงสัย หรืออยากให้ครูช่วยอธิบายจุดไหน ถามได้ตลอดเวลาเลยครับ`,
+          content: `สวัสดีครับ! วันนี้เรามาเรียนบทที่ ${lesson.day}: "${lesson.title}" กันนะ\nอยากให้ครูช่วยอธิบายคำศัพท์ & Chunks, ทริกออกเสียง IPA, จุดพลาดคนไทย หรือลองแต่งประโยคส่งมาให้ครูช่วยตรวจ ถามได้ตลอดเลยครับ`,
           timestamp: new Date().toISOString(),
         };
         setMessages([initial]);
@@ -36,7 +36,7 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
     loadHistory();
     window.addEventListener('english_steps_storage_updated', loadHistory);
     return () => window.removeEventListener('english_steps_storage_updated', loadHistory);
-  }, [lesson.id, lesson.title]);
+  }, [lesson.id, lesson.day, lesson.title]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,9 +87,10 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
   };
 
   const quickPrompts = [
-    'อธิบายคำศัพท์บทนี้',
+    'อธิบายคำศัพท์ & Chunks',
+    'จุดพลาดคนไทยบทนี้',
+    'ทริกออกเสียง IPA',
     'ขอคำใบ้หน่อย',
-    'ใช้ในชีวิตจริงยังไง?',
   ];
 
   return (
@@ -104,8 +105,8 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
             <div className="font-bold text-base text-foreground">
               ครูภาษาอังกฤษของคุณ
             </div>
-            <div className="text-xs font-medium text-muted-foreground">
-              บทเรียน: {lesson.title}
+            <div className="text-xs font-medium text-muted-foreground line-clamp-1">
+              วันที่ {lesson.day}: {lesson.title}
             </div>
           </div>
         </div>

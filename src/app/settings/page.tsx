@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/theme-provider';
-import { StoredAppData, ThemePreference } from '@/types/learning';
+import {
+  ExperienceLevel,
+  StoredAppData,
+  ThemePreference,
+  UserRole,
+} from '@/types/learning';
 import {
   getStoredData,
   updateProfile,
@@ -34,9 +39,20 @@ import {
 export default function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    role: UserRole;
+    experienceLevel: ExperienceLevel;
+    learningGoal: string;
+    targetMinutes: number;
+    timezone: string;
+  }>({
     name: 'ผู้เรียน',
     email: 'owner@englishsteps.local',
+    role: 'owner',
+    experienceLevel: 'zero',
+    learningGoal: 'comprehensive',
     targetMinutes: 60,
     timezone: 'Asia/Bangkok',
   });
@@ -54,6 +70,9 @@ export default function SettingsPage() {
         setProfile({
           name: data.profile.name || 'ผู้เรียน',
           email: data.profile.email || 'owner@englishsteps.local',
+          role: data.profile.role || 'owner',
+          experienceLevel: data.profile.experience_level || 'zero',
+          learningGoal: data.profile.learning_goal || 'comprehensive',
           targetMinutes: data.profile.target_minutes || 60,
           timezone: data.profile.timezone || 'Asia/Bangkok',
         });
@@ -72,6 +91,8 @@ export default function SettingsPage() {
     updateProfile({
       name: profile.name,
       target_minutes: Number(profile.targetMinutes),
+      experience_level: profile.experienceLevel,
+      learning_goal: profile.learningGoal,
       timezone: profile.timezone,
     });
     setSaveSuccess(true);
@@ -159,18 +180,22 @@ export default function SettingsPage() {
           ตั้งค่าและข้อมูลบัญชี
         </h1>
         <p className="text-base text-muted-foreground max-w-xl leading-relaxed">
-          จัดการบัญชีเจ้าของ การซิงก์ฐานข้อมูล ธีมการแสดงผล เวลาเรียนเป้าหมาย และการสำรองข้อมูล
+          จัดการบัญชีผู้เรียน การซิงก์ฐานข้อมูล ธีมการแสดงผล เป้าหมายรายวัน และการสำรองข้อมูล
         </p>
       </div>
 
-      {/* Owner Account & Cloud Sync Section */}
+      {/* Account & Cloud Sync Section */}
       {isSupabaseConfigured && (
         <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 text-sm font-extrabold text-review-accent">
                 <ShieldCheck className="w-4 h-4" />
-                <span>บัญชีเจ้าของระบบ (Supabase Auth + RLS)</span>
+                <span>
+                  {profile.role === 'owner'
+                    ? 'บัญชีเจ้าของระบบ (Owner · Supabase Auth + RLS)'
+                    : 'บัญชีผู้เรียน (Learner · Supabase Auth + RLS)'}
+                </span>
               </div>
               <div className="text-lg font-extrabold text-foreground font-display">
                 {profile.email}
@@ -289,10 +314,10 @@ export default function SettingsPage() {
       <section className="p-6 sm:p-8 bg-lesson-surface rounded-2xl space-y-6">
         <div>
           <h2 className="text-xl font-extrabold text-foreground">
-            เป้าหมายการเรียน
+            โปรไฟล์และเป้าหมายการเรียน
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            กำหนดชื่อและเวลาเรียนต่อวันของคุณ
+            กำหนดชื่อ ระดับพื้นฐานเริ่มต้น และเวลาเรียนต่อวันของคุณ (ค่าแนะนำตามหลักสูตร: 60 นาที/วัน)
           </p>
         </div>
 
@@ -307,6 +332,23 @@ export default function SettingsPage() {
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3 text-base text-foreground focus:border-accent focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-foreground mb-1.5">
+              ระดับพื้นฐานเริ่มต้น
+            </label>
+            <select
+              value={profile.experienceLevel}
+              onChange={(e) =>
+                setProfile({ ...profile, experienceLevel: e.target.value as ExperienceLevel })
+              }
+              className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3 text-base text-foreground focus:border-accent focus:outline-none"
+            >
+              <option value="zero">เริ่มจากศูนย์จริงๆ (Phase 0: เสียง &amp; โครงสร้างพื้นฐาน)</option>
+              <option value="beginner">พอรู้คำศัพท์เบื้องต้น (ทบทวนปรับระบบใหม่)</option>
+              <option value="intermediate">สื่อสารเบื้องต้นได้แล้ว (โฟกัส B1–C1 ความคล่อง)</option>
+            </select>
           </div>
 
           <div>
@@ -356,7 +398,7 @@ export default function SettingsPage() {
       <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
         <div>
           <h2 className="text-xl font-extrabold text-foreground">
-            ความเป็นเจ้าของข้อมูล และการสำรอง (Backup & Restore)
+            ความเป็นเจ้าของข้อมูล และการสำรอง (Backup &amp; Restore)
           </h2>
           <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
             ข้อมูลการเรียนทั้งหมดเป็นของคุณ สามารถส่งออก (Export) นำเข้า (Import) หรือล้างข้อมูลเพื่อเริ่มใหม่ได้ตลอดเวลา
@@ -413,17 +455,16 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-3 pt-1">
-          {/* Supabase Status */}
           <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3.5">
               <Server className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
               <div>
                 <div className="text-base font-bold text-foreground">
-                  ฐานข้อมูล Supabase (PostgreSQL, Auth & RLS)
+                  ฐานข้อมูล Supabase (PostgreSQL, Auth &amp; Multi-User RLS)
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {isSupabaseConfigured
-                    ? 'เชื่อมต่อฐานข้อมูล Supabase และระบบล็อกอินเจ้าของแล้ว'
+                    ? 'เชื่อมต่อฐานข้อมูล Supabase โหลดบทเรียน 252 วันและแยกสิทธิ์ผู้ใช้ด้วย RLS แล้ว'
                     : 'โหมดใช้งานในเครื่อง (Local Storage พร้อมใช้งานทันที)'}
                 </div>
               </div>
@@ -439,16 +480,15 @@ export default function SettingsPage() {
             </span>
           </div>
 
-          {/* AI Tutor Status */}
           <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3.5">
               <Sparkles className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 sm:mt-0" />
               <div>
                 <div className="text-base font-bold text-foreground">
-                  ครู AI ภาษาอังกฤษ (AI Tutor)
+                  ครู AI ภาษาอังกฤษ (AI Tutor v2)
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  ระบบ Intelligent Curriculum Tutor ใน Server พร้อมบันทึกแชตแยกตามบทและตรวจสิทธิ์เจ้าของ
+                  รองรับ IPA, Connected Speech, แก้จุดพลาดคนไทย (Thai L1) และตรวจประโยคเขียนเบื้องต้น
                 </div>
               </div>
             </div>
@@ -457,16 +497,15 @@ export default function SettingsPage() {
             </span>
           </div>
 
-          {/* Browser TTS Audio Status */}
           <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3.5">
               <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5 sm:mt-0" />
               <div>
                 <div className="text-base font-bold text-foreground">
-                  เสียงอ่าน (Web Speech API)
+                  เสียงอ่าน &amp; ฝึก Shadowing (Web Speech API)
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  อ่านออกเสียงภาษาอังกฤษได้ทันทีในเบราว์เซอร์ ไม่ต้องพึ่งพา API ภายนอก
+                  ปรับความเร็วได้ 3 ระดับ (0.75x / 0.9x / 1.0x) พร้อมโหมด Blind Shadowing และนาฬิกา 4/3/2
                 </div>
               </div>
             </div>

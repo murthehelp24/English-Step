@@ -20,8 +20,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'English Steps — ภาษาอังกฤษทีละก้าว ในทุกวันของคุณ',
-  description: 'เว็บไซต์เรียนภาษาอังกฤษส่วนตัว 112 วัน 16 สัปดาห์ พร้อมครู AI และสมุดทบทวน',
+  title: 'English Steps — ภาษาอังกฤษทีละก้าว จาก 0 สู่การใช้งานจริง',
+  description:
+    'หลักสูตรเรียนภาษาอังกฤษ 252 วัน 6 Phases 36 Modules (Pre-A1 ถึง High-B2/C1) วันละ 60 นาที พร้อม IPA, Chunks, Shadowing 3 รอบ, ครู AI และระบบทบทวน Spaced Repetition',
 };
 
 export default function RootLayout({

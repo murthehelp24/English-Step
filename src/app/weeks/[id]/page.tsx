@@ -17,7 +17,7 @@ export default function WeekDetailPage({ params }: WeekPageProps) {
   const resolvedParams = use(params);
   const weekNumber = parseInt(resolvedParams.id, 10);
 
-  if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+  if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 36) {
     notFound();
   }
 
@@ -47,21 +47,34 @@ export default function WeekDetailPage({ params }: WeekPageProps) {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-background text-sm font-bold text-foreground hover:text-accent transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>กลับคลังบทเรียน</span>
+            <span>กลับคลังบทเรียน 36 โมดูล</span>
           </Link>
 
-          <span className="px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
-            สัปดาห์ที่ {String(weekNumber).padStart(2, '0')} • จบแล้ว {completedCount}/7 วัน
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {currentWeek?.cefr_level && (
+              <span className="px-3 py-1 rounded-full bg-background text-foreground text-xs font-bold border border-border">
+                {currentWeek.cefr_level}
+              </span>
+            )}
+            <span className="px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
+              โมดูลที่ {String(weekNumber).padStart(2, '0')} • จบแล้ว {completedCount}/7 วัน
+            </span>
+          </div>
         </div>
 
         <div className="space-y-2">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
             {currentWeek?.title || `สัปดาห์ที่ ${weekNumber}`}
           </h1>
-          <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">
-            รวมบทเรียนทั้ง 7 วัน พร้อมคำอธิบาย ตัวอย่างเสียงอ่าน และแบบฝึกหัดของสัปดาห์นี้
-          </p>
+          {currentWeek?.summary ? (
+            <p className="text-base text-muted-foreground max-w-3xl leading-relaxed">
+              {currentWeek.summary}
+            </p>
+          ) : (
+            <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">
+              รวมบทเรียนทั้ง 7 วัน พร้อมคำอธิบาย ตัวอย่างเสียงอ่าน และแบบฝึกหัดของโมดูลนี้
+            </p>
+          )}
         </div>
       </div>
 
@@ -79,11 +92,13 @@ export default function WeekDetailPage({ params }: WeekPageProps) {
             return (
               <div
                 key={lesson.id}
-                className="p-5 sm:p-6 bg-background rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-5"
+                className="p-5 sm:p-6 bg-background rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-5 border border-border/50"
               >
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm font-bold">
-                    <span className="text-accent">วันที่ {lesson.day}</span>
+                    <span className="text-accent">
+                      วันที่ {lesson.day} • {lesson.type === 'assessment' ? 'หมุดหมายวัดผล' : lesson.type === 'review' ? 'ทบทวนสัปดาห์' : 'บทเรียน'}
+                    </span>
                     <span className="text-border">•</span>
                     <span className="text-muted-foreground">{lesson.minutes} นาที</span>
                     {isCompleted && (
@@ -99,10 +114,18 @@ export default function WeekDetailPage({ params }: WeekPageProps) {
                   <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
                     {lesson.objective}
                   </p>
+                  {lesson.headlineEnglish && (
+                    <div className="pt-2 text-sm text-foreground/80 font-medium">
+                      <span className="text-xs text-muted-foreground font-bold">ตัวอย่าง: </span>
+                      <span className="font-display italic">&ldquo;{lesson.headlineEnglish}&rdquo;</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 shrink-0">
-                  <AudioPlayer text={lesson.reading} label="ฟังบทอ่าน" />
+                  {lesson.headlineEnglish && (
+                    <AudioPlayer text={lesson.headlineEnglish} label="ฟังตัวอย่าง" />
+                  )}
                   <Link
                     href={`/lessons/${lesson.id}`}
                     className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-extrabold px-5 py-2.5 rounded-xl hover:brightness-105 active:scale-[0.99] transition-all"

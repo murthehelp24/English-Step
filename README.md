@@ -1,12 +1,34 @@
-# English Steps — เว็บไซต์เรียนภาษาอังกฤษส่วนตัว
+# English Steps — Master Track (Zero to Real Fluency)
 
-> ภาษาอังกฤษทีละก้าว ในทุกวันของคุณ
+> ภาษาอังกฤษทีละก้าว ในทุกวันของคุณ • จากศูนย์สู่ความคล่องตัวระดับใช้งานจริง 252 วัน
 
-เว็บไซต์เรียนภาษาอังกฤษส่วนตัว พัฒนาด้วย Next.js 15 (App Router, TypeScript), Tailwind CSS, Supabase (Auth/Postgres), Web Speech API สำหรับฝึกฟัง และ Server AI Tutor พร้อมหลักสูตรครบ 112 วัน (16 สัปดาห์) 740 แบบฝึกหัด
+เว็บแอปพลิเคชันเรียนภาษาอังกฤษแบบเข้มข้น พัฒนาด้วย Next.js 15 (App Router, TypeScript, React 19), Tailwind CSS, Supabase (PostgreSQL / SSR Auth / RLS), Web Speech API TTS ปรับความเร็ว 3 ระดับ และ Intelligent Curriculum AI Tutor v2 บนหลักสูตร **Master Track 252 วัน (36 Modules / 6 Phases)** พร้อมแบบฝึกหัดเข้มข้น 2,322 ข้อ และคลังคำศัพท์ Lexical Chunks กว่า 1,600+ คำ
 
 ---
 
-## 🎨 ทิศทางการออกแบบที่เลือก (Nordic Bright — ปรับตามคำสั่งล่าสุดของผู้ใช้)
+## 🌟 จุดเด่นหลักสูตร Master Track (252 Days / 36 Modules / 6 Phases)
+
+หลักสูตรถูกออกแบบตามงานวิจัย **Second Language Acquisition (SLA)**, มาตรฐาน **Cambridge CEFR (Pre-A1 → High B2/Early C1)** และ **Paul Nation’s Four Strands (สมดุล 4 แกน วันละ 60 นาที)**:
+
+1. **Phase 0: ปลดล็อกระบบเสียงและโครงสร้างฐานศูนย์ (Days 1–14 | Pre-A1)**:
+   - ปรับหูและกล้ามเนื้อปากตั้งแต่ศูนย์: จังหวะ Stress-Timed, เสียง Schwa `/ə/`, พยัญชนะที่ไม่มีในภาษาไทย (`/θ/ /ð/ /v/ /z/ /ʃ/`), ตัวสะกดท้ายคำ (Final Consonants), เสียงควบกล้ำ และ Phonics
+2. **Phase 1: รากฐานการสื่อสารและโครงสร้างประโยคแกนหลัก (Days 15–56 | Solid A1)**:
+   - สร้างประโยคบอกเล่า ปฏิเสธ คำถามอย่างถูกต้องด้วย Be/Do/Have, ตรรกะ Articles (a/an/the), นามนับได้-ไม่ได้, กิจวัตรประจำวัน และเหตุการณ์ในอดีต Past Simple
+3. **Phase 2: เล่าเรื่อง ตอบโต้ และเชื่อมความคิดในชีวิตประจำวัน (Days 57–112 | A2 → Early B1)**:
+   - เล่าเรื่องต่อเนื่องด้วย Past Continuous & Present Perfect, อนาคต 4 รูปแบบ, Modals, เปรียบเทียบขั้นกว่า-สุด, Phrasal Verbs, Relative Clauses และ Conditionals พื้นฐาน
+4. **Phase 3: คิดเป็นภาษาอังกฤษและสื่อสารในงานจริง (Days 113–168 | Solid B1 → Early B2)**:
+   - ลำดับเวลาซับซ้อน (Perfect Continuous / Past Perfect), Passive Voice ในข่าวและงาน, Indirect Diplomacy, Reported Speech, การคาดเดา และ Discourse Markers
+5. **Phase 4: สื่อสารคล่องตัว เลือกโทนภาษา และฟังความเร็วเจ้าของภาษา (Days 169–224 | B2 Operational Fluency)**:
+   - Collocations & Multi-word Phrasal Verbs ระดับ B2, ปรับโทนเสียงตามผู้ฟัง (Register), การเห็นต่างอย่างนุ่มนวล (Tactful Disagreement), Participle Clauses และ Blind Shadowing
+6. **Phase 5: ความแม่นยำระดับสูงและการต่อยอดใช้จริงตลอดชีวิต (Days 225–252 | High B2 → C1 Synthesis)**:
+   - Inversion, Subjunctive, สำนวนตามบริบทวัฒนธรรม, คิดเป็นภาษาอังกฤษโดยไร้ตัวแปลไทย, PREP & STAR Frameworks, โปรเจกต์เขียนและพูด 4/3/2 ขั้นสูง พร้อมวางระบบชีวิตให้อยู่กับภาษาอังกฤษได้จริง
+
+> [!NOTE]
+> หลักสูตรนี้มุ่งเน้นการใช้งานจริงในชีวิตประจำวัน การทำงาน การเดินทาง และการสื่อสารกับเจ้าของภาษา **ไม่มีการอ้างอิงข้อสอบมาตรฐาน (TOEIC, IELTS, TOEFL)** ใดๆ ทั้งสิ้น
+
+---
+
+## 🎨 ทิศทางการออกแบบ (Nordic Bright)
 
 - **ดีไซน์หลัก**: Nordic Bright สไตล์มินิมอลอ่านง่าย พื้นสะอาดตัดกับบล็อกสีพาสเทลอุ่น (`#FFF7DF` เหลืองเนยสำหรับบทเรียน, `#EAF4FF` ฟ้าอ่อนสำหรับทบทวน, `#F5F5F2` เทาหินนุ่ม), ปุ่มหลักสีส้มสด (`#FF5A1F`) แบบ Flat ไม่มีขอบเงา 3 มิติ และตัวอักษรขนาดใหญ่ (`IBM Plex Sans Thai` + `Plus Jakarta Sans`)
 - **ธีม**: รองรับ 3 โหมดตั้งแต่เวอร์ชันแรก:
@@ -16,133 +38,83 @@
 
 ---
 
-## 🚀 ฟังก์ชันที่พัฒนาเสร็จสมบูรณ์พร้อมใช้งานจริง
+## 🚀 ฟังก์ชันที่พัฒนาเสร็จสมบูรณ์
 
 1. **หน้า Today (`/`)**:
-   - แถบนำทาง Nordic Bright พร้อมตัวแสดงวันที่ปัจจุบัน (`วันที่ X / 112`), จำนวนข้อรอทบทวน, และตัวสลับธีม สว่าง/มืด/ตามระบบ
-   - การ์ดบทเรียนวันนี้ (`#FFF7DF`) ดึงบทถัดไปอัตโนมัติ พร้อมประโยคสำคัญ ปุ่มฟังเสียงอ่าน และปุ่มเริ่มเรียน
-   - การ์ดสมุดทบทวน (`#EAF4FF`) แสดงตัวอย่างประโยคที่ผิดขีดฆ่าเทียบกับประโยคที่ถูก และปุ่มไปหน้าทบทวน
-   - แถบสัปดาห์ปัจจุบัน (Week strip) แสดงสถานะ 7 วัน
-
-2. **ห้องเรียนรายวัน (`/lessons/[id]`) แบบ Step-by-Step 5 ขั้นตอน (ครบ 112 วัน)**:
-   - แถบนำทาง 5 ขั้น: **1. ปูพื้นฐาน**, **2. คำศัพท์**, **3. ฝึกฟังและอ่าน**, **4. แบบฝึก**, **5. เขียนและจบบท**
-   - เสียงอ่านด้วย **Web Speech API TTS** ปรับความเร็วเสียงได้ (`ช้า 0.75x` / `ปกติ 1.0x`) มีปุ่มหยุดและฟังซ้ำ
-   - คำศัพท์ประจำวันพร้อมความหมาย ตัวอย่าง และปุ่มบุ๊กมาร์ก
-   - แบบฝึกหัดประจำวัน 740 ข้อ (Recall, Gap, Reorder, Comprehension, Translation, Dictation) โหมดโฟกัสทีละข้อ (สลับดูทั้งหมดในหน้าเดียวได้) ตรวจคำตอบด้วย deterministic logic พร้อมขอคำใบ้และคำอธิบายหลังตอบ
-   - ระบบบันทึกข้อผิดพลาดเข้าสมุดทบทวนอัตโนมัติเมื่อตอบผิด
-   - งานเขียนประจำวัน (Writing Challenge) พร้อมตัวอย่างและ Autosave
-   - **ครู AI ประจำห้องเรียน**: รู้บริบทของบทเรียนปัจจุบัน ให้คำอธิบายภาษาไทย ให้คำใบ้ และตรวจประโยค
-
-3. **คลังบทเรียน 16 สัปดาห์ (`/weeks` และ `/weeks/[id]`)**:
-   - รวมครบ 112 วัน 16 สัปดาห์ พร้อมช่องค้นหาตามหัวข้อหรือคำศัพท์ และสรุปผลประจำสัปดาห์
-
+   - แถบนำทางแสดงวันที่ปัจจุบัน (`วันที่ X / 252`), Phase Badge, จำนวนข้อรอทบทวน, และตัวสลับธีม
+   - การ์ดบทเรียนวันนี้ ดึงบทถัดไปอัตโนมัติพร้อมประโยคสำคัญ ปุ่มฟังเสียงอ่าน และปุ่มเริ่มเรียน
+   - การ์ดสมุดทบทวน Spaced Repetition แสดงข้อผิดเทียบกับข้อถูก
+   - แถบสัปดาห์ปัจจุบัน (Week Strip) แสดงสถานะ 7 วัน
+2. **ห้องเรียนรายวัน (`/lessons/[id]`) Interactive Workspace**:
+   - **Phase & CEFR Badges**: แสดงระดับปัจจุบัน
+   - **Thai L1 Warning Card**: ชี้ชัดจุดผิดที่คนไทยมักพลาด สาเหตุทางภาษาแม่ และกฎวิธีแก้
+   - **IPA & Connected Speech Card**: กฎการเชื่อมเสียง ลดเสียงสระเบา และคำซ้อม
+   - **Lexical Chunk Pills**: แสดงคำศัพท์คู่ Collocations สำหรับนำไปพูดได้ทันที
+   - **Audio Player 3 สปีด**: ปรับความเร็วเสียงอ่าน (`0.75x`, `0.9x`, `1.0x`) พร้อมโหมด **Blind Shadowing**
+   - **Interleaved Exercises (8–12 ข้อ/วัน)**: Multiple Choice, Gap Fill, Sentence Reorder, Thai-to-English Translation, Dictogloss, Dictation พร้อมคำอธิบายทันที
+   - **4/3/2 Speaking Countdown Timer**: นาฬิกานับถอยหลังฝึกพูดคล่องตัว `4:00 → 3:00 → 2:00`
+   - **AI Tutor v2**: รู้จัก IPA, Thai L1 traps, Collocations และช่วยตรวจแก้งานเขียน
+3. **คลังบทเรียน 36 โมดูล (`/weeks` และ `/weeks/[id]`)**:
+   - กรองตาม Phase 0–5, ค้นหาตามหัวข้อ และดูรายละเอียดสรุปแต่ละโมดูล
 4. **สมุดทบทวนข้อผิดพลาด (`/review`)**:
-   - ระบบ **Spaced Repetition** 4 ขั้น (1, 3, 7, 14 วัน)
-   - ตอบถูกเลื่อนขั้น ตอบผิดรีเซ็ตกลับขั้น 1 นัดทบทวนใน 1 วัน
-
-5. **คลังคำศัพท์ (`/vocabulary`)**:
-   - รวมคำศัพท์ทั้งหมด ค้นหา กรองตามสัปดาห์ เฉพาะคำที่บันทึก และฟังเสียงอ่านได้ทุกคำ
-
+   - ระบบ Spaced Repetition 5 ขั้น (`1, 3, 7, 14, 30 วัน`) ตอบถูกเลื่อนขั้น ตอบผิดรีเซ็ต
+5. **คลังคำศัพท์และ Chunks (`/vocabulary`)**:
+   - รวบรวมกว่า 1,600 คำ พร้อมสัญลักษณ์ IPA, ก้อนคำ (Chunks) และความหมายภาษาไทย กรองตาม Phase และระบบแบ่งหน้า Pagination
 6. **หน้าพัฒนาการ (`/progress`)**:
-   - สถิติจริงจาก attempts (บทที่จบแล้ว, จำนวนแบบฝึกที่ทำ, ความแม่นยำเฉลี่ย, งานเขียนที่บันทึก, คำศัพท์ที่บันทึก) และแถบความคืบหน้า 16 สัปดาห์
-
-7. **หน้าตั้งค่าและความเป็นเจ้าของข้อมูล (`/settings`)**:
-   - สลับธีม Light / Dark / System
-   - กำหนดเวลาเรียนเป้าหมายต่อวัน และเขตเวลา `Asia/Bangkok`
-   - **Export ข้อมูล (JSON)** สำหรับสำรองข้อมูลได้ตลอดเวลา
-   - **Import ข้อมูล (JSON)** สำหรับกู้คืนข้อมูล
-   - ล้างข้อมูลเพื่อเริ่มใหม่ (Reset Data)
-
-8. **ระบบ Login เจ้าของระบบ & Cloud Sync (`/login`, `/onboarding`, `/api/sync`)**:
-   - **Supabase SSR Auth + Middleware Guard (`src/middleware.ts`)**: ป้องกันหน้าเรียนและ API ทุกเส้นทางด้วย cookie session (`@supabase/ssr`)
-   - **ล็อกสิทธิ์เฉพาะเจ้าของ (`OWNER_EMAIL`)**: บัญชีอื่นที่ไม่ตรงกับ `OWNER_EMAIL` จะถูกปฏิเสธอัตโนมัติทั้งในระดับ Middleware, Auth Callback (`/auth/callback`), และ API (`/api/sync`, `/api/chat`)
-   - **ซิงก์ข้อมูลระหว่างเบราว์เซอร์และคลาวด์ (`/api/sync`)**: โหลดและอัปเดตประวัติการเรียน ข้อผิดพลาด ทบทวน งานเขียน แชทกับครู AI และธีมอัตโนมัติ พร้อมระบบสำรองข้อมูล Local เดิมก่อนเข้าสู่ระบบเพื่อให้ผู้ใช้เลือกนำเข้าได้เอง
-   - รองรับ **Onboarding (`/onboarding`)** และ **Local Mode** อัตโนมัติหากยังไม่ได้ตั้งค่าตัวแปร Supabase
+   - ติดตามความคืบหน้ารวม 252 วัน, อัตราความแม่นยำ, จำนวนงานเขียน, การ์ดวัดผล 6 Phases และตาราง 36 โมดูล
+7. **ระบบผู้ใช้งานและสิทธิ์ (Single Owner & Multi-Learner Ready)**:
+   - โหมดส่วนตัว (ค่าเริ่มต้น): ล็อกสิทธิ์เฉพาะ `OWNER_EMAIL`
+   - โหมดหลายผู้เรียน (Multi-Learner): เปิดให้ผู้เรียนคนอื่นสมัครและเข้าเรียนได้ด้วยตนเองเมื่อตั้งค่า `ALLOW_MULTI_USER=true` และ `NEXT_PUBLIC_ALLOW_SIGNUP=true` โดยแต่ละคนมีข้อมูลและประวัติการเรียนแยกขาดจากกันด้วย Row-Level Security (RLS)
 
 ---
 
-## 🛠️ วิธีเปิดใช้งานในเครื่อง (Local Development)
+## 🛠️ คำสั่งสำหรับการพัฒนาและการจัดการหลักสูตร
 
-### 1. เข้าสู่โฟลเดอร์โปรเจกต์
 ```bash
-cd "/Users/attachai/Desktop/English Step/english-steps"
-```
-
-### 2. ติดตั้ง Dependencies (หากยังไม่ได้ติดตั้ง)
-```bash
+# 1. ติดตั้ง Dependencies
 npm install
-```
 
-### 3. รัน Development Server
-```bash
+# 2. คอมไพล์และตรวจสอบหลักสูตร 252 วัน
+npm run curriculum:build
+
+# 3. นำเข้าหลักสูตรทั้งหมดเข้าสู่ฐานข้อมูล Supabase
+npm run curriculum:seed
+
+# 4. รันชุดทดสอบ (16 Invariant Tests)
+npm run test:curriculum
+
+# 5. รัน Development Server
 npm run dev
-```
-เปิดเบราว์เซอร์ไปที่: `http://localhost:3000`
 
-### 4. รัน Production Build & Test
-```bash
-# รัน Unit Tests ตรวจสอบหลักสูตร 112 วัน และ 740 ข้อ
-npx tsx tests/curriculum.test.ts
-
-# รัน Build (รวม Typecheck + ESLint + Next.js Bundle)
+# 6. รัน Production Build
 npm run build
-
-# รัน Production Server
-npm run start
 ```
 
 ---
 
-## ☁️ วิธีเชื่อมต่อบริการจริง (เมื่อพร้อมใช้งาน Production)
+## ☁️ การตั้งค่า Supabase และ Vercel Production
 
-### 1. ตั้งค่า Supabase (Database & Auth)
-1. สร้างโปรเจกต์ใหม่ที่ [Supabase](https://supabase.com)
-2. ไปที่ **SQL Editor** แล้วรันไฟล์ Schema Migration ตามลำดับ:
-   - `supabase/migrations/20261108000000_init_english_steps.sql` (โครงสร้างตารางหลัก + RLS Policies + Auto Profile Trigger)
-   - `supabase/migrations/20261108010000_add_saved_vocabulary.sql` *(แนะนำให้รันเพิ่มเติมเพื่อให้ `saved_vocabulary`, `started_at` และประวัติการทบทวนเก็บลงคลาวด์ครบ 100%)*
-3. ตั้งค่า URL ใน Supabase Dashboard → **Authentication** → **URL Configuration**:
-   - เพิ่ม Site URL และ Redirect URLs (เช่น `https://your-app.vercel.app/**` และ `http://localhost:3000/**`)
-4. สร้างบัญชีเจ้าของระบบใน **Authentication → Users** (ให้ตรงกับ `OWNER_EMAIL`)
-5. คัดลอกค่าจาก Supabase Project Settings (**Project URL**, **anon key**, **service_role key**) มาใส่ใน `.env.local` (อ้างอิงจาก `.env.example`):
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
-   SUPABASE_SERVICE_ROLE_KEY=eyJh...
-   OWNER_EMAIL=owner@example.com
-   ```
-6. รันสคริปต์ Seed บทเรียน 112 วันเข้าสู่ฐานข้อมูล Supabase:
-   ```bash
-   npx tsx scripts/seed-curriculum.ts
-   ```
+### ตัวแปรสภาพแวดล้อม (`.env.local` / Vercel Environment Variables)
 
-### 2. ตั้งค่า AI Provider (Gemini / OpenAI / Claude)
-1. เพิ่ม Key ใน `.env.local`:
-   ```
-   AI_PROVIDER=gemini
-   AI_API_KEY=AIzaSy...
-   AI_MODEL=gemini-1.5-flash
-   AI_MONTHLY_BUDGET_USD=10.00
-   ```
-   *(หากยังไม่ใส่ API Key ระบบจะใช้ Intelligent Curriculum Tutor Engine ใน Server ซึ่งทำงานได้ทันทีโดยไม่มีค่าใช้จ่าย)*
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
+SUPABASE_SERVICE_ROLE_KEY=eyJh...
 
-### 3. Deploy บน Vercel
-1. เชื่อมต่อ Git Repository กับ [Vercel](https://vercel.com)
-2. ตั้งค่า Environment Variables ใน Vercel Dashboard ตาม `.env.example`
-3. กำหนด Root Directory เป็น `english-steps` หาก deploy จาก repository รวม
-4. กด Deploy
+# สิทธิ์การใช้งาน
+OWNER_EMAIL=attachaijumpahom@gmail.com
+ALLOW_MULTI_USER=false          # ตั้งเป็น true เมื่อต้องการเปิดให้ผู้อื่นสมัครเข้าเรียน
+NEXT_PUBLIC_ALLOW_SIGNUP=false  # ตั้งเป็น true เพื่อแสดงแท็บสมัครสมาชิกในหน้า Login
 
----
+# เวลาและ AI
+NEXT_PUBLIC_APP_TIMEZONE=Asia/Bangkok
+AI_PROVIDER=gemini
+AI_API_KEY=AIzaSy...
+AI_MODEL=gemini-1.5-flash
+AI_MONTHLY_BUDGET_USD=10.00
+```
 
-## 📋 สถานะการทำงานจริง vs บริการภายนอก
-
-| ส่วนของระบบ | สถานะปัจจุบัน | หมายเหตุ |
-|---|---|---|
-| **ดีไซน์ Nordic Bright (ทุกหน้า)** | ✅ ใช้งานจริง 100% | รองรับ Light / Dark / System พร้อมตัวอักษรขนาดอ่านง่าย |
-| **เนื้อหา 112 วัน / 16 สัปดาห์** | ✅ ใช้งานจริง 100% | นำเข้าจาก curriculum.json ครบ 740 แบบฝึกหัด |
-| **ระบบทำแบบฝึกหัด & ตรวจคำตอบ** | ✅ ใช้งานจริง 100% | ตรวจจับคำตอบ ยืดหยุ่นเรื่อง punctuation |
-| **ระบบ Spaced Repetition (1/3/7/14 วัน)** | ✅ ใช้งานจริง 100% | เลื่อน/ลด stage ตามผลตอบ |
-| **เสียงอ่านบทเรียน (TTS)** | ✅ ใช้งานจริง 100% | ใช้ Web Speech API ในเบราว์เซอร์ ไม่ต้องพึ่งพา API ภายนอก |
-| **Autosave & ประวัติคำตอบ** | ✅ ใช้งานจริง 100% | บันทึกใน LocalStorage ทันที และมี Export/Import JSON |
-| **ระบบป้องกันการเข้าถึง (SSR Auth + Owner Lock)** | ✅ ใช้งานจริง 100% | Middleware, `/auth/callback`, `/api/auth/logout`, ล็อกสิทธิ์ด้วย `OWNER_EMAIL` |
-| **ซิงก์ข้อมูลคลาวด์ Supabase (`/api/sync`)** | ✅ ใช้งานจริง 100% | ซิงก์ Profile, ความคืบหน้า, คำตอบ, ข้อผิดพลาด, Spaced Repetition, แชท และงบ AI รายเดือน |
-| **ครู AI ประจำห้องเรียน (`/api/chat`)** | ✅ ใช้งานจริงในโหมด Server Engine + AI Key | บันทึกแชทและนับโควตาค่าใช้จ่ายรายเดือนลง Supabase พร้อม fallback ในตัว |
+### การรัน SQL Migration ใน Supabase
+หากต้องการอัปเกรดฐานข้อมูล Supabase ให้รองรับ Master Track คอลัมน์ใหม่ และ Multi-User Auto Provisioning ให้รันไฟล์นี้ใน **Supabase SQL Editor**:
+- `supabase/migrations/20261108020000_master_track_and_multiuser.sql`

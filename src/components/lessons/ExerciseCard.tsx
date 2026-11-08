@@ -33,6 +33,8 @@ export function ExerciseCard({
   const [showHint, setShowHint] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const hasChoices = Array.isArray(exercise.choices) && exercise.choices.length > 0;
+
   const normalizeText = (text: string) => {
     return text
       .toLowerCase()
@@ -42,13 +44,15 @@ export function ExerciseCard({
   };
 
   const evaluateAnswer = (userAns: string, targetAns: string): boolean => {
+    if (userAns.trim() === targetAns.trim()) return true;
+
     const normUser = normalizeText(userAns);
     const normTarget = normalizeText(targetAns);
 
     if (normUser === normTarget) return true;
 
     const targetVariants = targetAns
-      .split(/[;/]/)
+      .split(/[;]/)
       .map((t) => normalizeText(t))
       .filter(Boolean);
 
@@ -56,22 +60,32 @@ export function ExerciseCard({
       if (normUser === v) return true;
     }
 
+    // Also allow slash variants only when NOT selecting from fixed choice labels containing '/'
+    if (!hasChoices && targetAns.includes('/')) {
+      const slashVariants = targetAns
+        .split('/')
+        .map((t) => normalizeText(t))
+        .filter(Boolean);
+      for (const v of slashVariants) {
+        if (normUser === v) return true;
+      }
+    }
+
     return false;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputAnswer.trim() || isSubmitting) return;
+  const submitValue = (rawValue: string) => {
+    if (!rawValue.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    const isCorrect = evaluateAnswer(inputAnswer, exercise.answer);
+    const isCorrect = evaluateAnswer(rawValue, exercise.answer);
 
     const attempt = saveExerciseAttempt(
       lessonId,
       exercise.id,
-      inputAnswer.trim(),
+      rawValue.trim(),
       isCorrect,
-      isCorrect ? 'ถูกต้องแล้วครับ ยอดเยี่ยมมาก!' : 'ยังไม่ตรงกับเฉลย ลองทบทวนข้อความดูนะครับ',
+      isCorrect ? 'ถูกต้องแล้วครับ ยอดเยี่ยมมาก!' : 'ยังไม่ตรงกับเฉลย ลองทบทวนคำอธิบายดูนะครับ',
       showHint
     );
 
@@ -81,16 +95,22 @@ export function ExerciseCard({
         lessonTitle,
         exercise.id,
         exercise.prompt,
-        inputAnswer.trim(),
+        rawValue.trim(),
         exercise.answer,
         exercise.explanation,
         exercise.kind
       );
     }
 
+    setInputAnswer(rawValue.trim());
     setSubmittedAttempt(attempt);
     setIsSubmitting(false);
     onAttemptSaved?.();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitValue(inputAnswer);
   };
 
   const handleRetry = () => {
@@ -98,14 +118,20 @@ export function ExerciseCard({
   };
 
   const kindLabels: Record<string, string> = {
-    recall: 'คำศัพท์และความหมาย',
+    recall: 'คำศัพท์และ Chunks',
     gap: 'เติมคำในช่องว่าง',
     reorder: 'เรียงคำเป็นประโยค',
-    comprehension: 'จับใจความ',
-    translation: 'เขียนเป็นภาษาอังกฤษ',
+    comprehension: 'ฟังและจับใจความ',
+    translation: 'เขียนภาษาอังกฤษ',
     dictation: 'ฟังแล้วเขียนตามเสียง',
-    choice: 'เลือกคำตอบ',
+    dictogloss: 'Dictogloss ฟังจับโครงสร้าง',
+    error_fix: 'แก้จุดพลาดแบบคนไทย',
+    choice: 'เลือกคำตอบที่ถูกต้อง',
+    free: 'ตอบอิสระ',
   };
+
+  const playableAudioText =
+    exercise.audio_text || (exercise.kind === 'dictation' ? exercise.answer : undefined);
 
   return (
     <div className="p-6 sm:p-8 bg-lesson-surface rounded-2xl space-y-5 transition-colors duration-200">
@@ -120,27 +146,68 @@ export function ExerciseCard({
       </div>
 
       {/* Prompt */}
-      <div className="text-foreground font-bold text-lg sm:text-xl leading-relaxed">
+      <div className="text-foreground font-bold text-lg sm:text-xl leading-relaxed whitespace-pre-line">
         {exercise.prompt}
       </div>
 
-      {/* Dictation special helper: listen button */}
-      {exercise.kind === 'dictation' && (
+      {/* Audio helper for dictation / dictogloss / listening comprehension */}
+      {playableAudioText && (
         <div>
-          <AudioPlayer text={exercise.answer} label="กดฟังเสียงประโยคนี้" slowRate />
+          <AudioPlayer
+            text={playableAudioText}
+            label={
+              exercise.kind === 'dictation'
+                ? 'กดฟังเสียงประโยคนี้'
+                : exercise.kind === 'dictogloss'
+                ? 'ฟังบทพูด Dictogloss (2 รอบ)'
+                : 'ฟังเสียงบทอ่านสำหรับคำถามนี้'
+            }
+            slowRate
+          />
         </div>
       )}
 
-      {/* Form / Answer input */}
+      {/* Form / Answer input or Multiple-Choice selector */}
       {!submittedAttempt ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            value={inputAnswer}
-            onChange={(e) => setInputAnswer(e.target.value)}
-            placeholder="พิมพ์คำตอบของคุณที่นี่..."
-            className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground text-base sm:text-lg font-display focus:border-accent focus:outline-none transition-colors"
-          />
+          {hasChoices ? (
+            <div className="grid grid-cols-1 gap-2.5">
+              {exercise.choices!.map((choice, cIdx) => {
+                const isSelected = inputAnswer === choice;
+                return (
+                  <button
+                    key={cIdx}
+                    type="button"
+                    onClick={() => setInputAnswer(choice)}
+                    className={`w-full text-left p-4 rounded-xl bg-background transition-all flex items-start gap-3 ${
+                      isSelected
+                        ? 'ring-2 ring-accent font-bold text-foreground'
+                        : 'hover:opacity-90 text-foreground'
+                    }`}
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 mt-0.5 ${
+                        isSelected
+                          ? 'bg-accent text-accent-foreground'
+                          : 'bg-surface text-muted-foreground'
+                      }`}
+                    >
+                      {String.fromCharCode(65 + cIdx)}
+                    </span>
+                    <span className="font-display text-base leading-relaxed">{choice}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={inputAnswer}
+              onChange={(e) => setInputAnswer(e.target.value)}
+              placeholder="พิมพ์คำตอบของคุณที่นี่..."
+              className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground text-base sm:text-lg font-display focus:border-accent focus:outline-none transition-colors"
+            />
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <button
@@ -166,8 +233,8 @@ export function ExerciseCard({
           {showHint && (
             <div className="p-4 bg-background rounded-xl text-sm sm:text-base text-foreground leading-relaxed">
               <span className="font-bold text-accent">คำใบ้: </span>
-              {exercise.explanation.slice(0, 120)}
-              {exercise.explanation.length > 120 ? '...' : ''}
+              {exercise.explanation.slice(0, 140)}
+              {exercise.explanation.length > 140 ? '...' : ''}
             </div>
           )}
         </form>
@@ -191,7 +258,8 @@ export function ExerciseCard({
                 {submittedAttempt.is_correct ? 'ถูกต้องครับ ยอดเยี่ยม!' : 'ยังไม่ตรงกับเฉลย'}
               </div>
               <div className="text-sm text-foreground mt-1">
-                คำตอบของคุณ: <span className="font-display font-semibold">{submittedAttempt.user_answer}</span>
+                คำตอบของคุณ:{' '}
+                <span className="font-display font-semibold">{submittedAttempt.user_answer}</span>
               </div>
             </div>
           </div>
