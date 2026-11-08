@@ -1,64 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Nordic Bright: Light Mode */
-  --background: #FFFFFF;
-  --foreground: #191919;
-  --muted-foreground: #595952;
-  --surface: #F5F5F2;
-  --lesson-surface: #FFF7DF;
-  --lesson-badge: #FFE28A;
-  --lesson-badge-fg: #664600;
-  --review-surface: #EAF4FF;
-  --review-accent: #1D72D8;
-  --review-accent-fg: #FFFFFF;
-  --border: #EAEAE4;
-  --control-border: #D4D4CC;
-  --accent: #FF5A1F;
+  /* Sunny Path Design System (Approved) */
+  --background: #FFF9EE;
+  --foreground: #2A1F4A;
+  --muted-foreground: #6E6690;
+  --surface: #FFFFFF;
+  --surface-alt: #F4F0FF;
+  --lesson-surface: #FFFFFF;
+  --lesson-badge: #FFE7C2;
+  --lesson-badge-fg: #8A4A00;
+  --review-surface: #FFE4EE;
+  --review-accent: #FF7AA8;
+  --review-accent-fg: #2A1F4A;
+  --border: #EEE6D6;
+  --control-border: #E5DCB8;
+  --accent: #6C4CF1;
   --accent-foreground: #FFFFFF;
-  --primary: #FF5A1F;
+  --primary: #6C4CF1;
   --primary-foreground: #FFFFFF;
-  --dark-chip: #191919;
+  --dark-chip: #2A1F4A;
   --dark-chip-fg: #FFFFFF;
-  --focus-ring: #FF5A1F;
-  --success: #15803D;
-  --success-bg: #ECFDF5;
-  --error: #D9381E;
-  --error-bg: #FEF2F2;
+  --focus-ring: #6C4CF1;
+  --success: #16A34A;
+  --success-bg: #E6F9C4;
+  --error: #E11D48;
+  --error-bg: #FFE4EE;
 
   color-scheme: light;
 }
 
 [data-theme="dark"],
 .dark {
-  /* Nordic Bright: Dark Mode (clean dark charcoal & warm sand/sky accents) */
-  --background: #121417;
-  --foreground: #F4F4F1;
-  --muted-foreground: #A8A8A0;
-  --surface: #1D2025;
-  --lesson-surface: #2B2416;
-  --lesson-badge: #4D3E19;
-  --lesson-badge-fg: #FFE28A;
-  --review-surface: #162332;
-  --review-accent: #60A5FA;
-  --review-accent-fg: #0B1120;
-  --border: #2C3138;
-  --control-border: #434A54;
-  --accent: #FF7647;
-  --accent-foreground: #121417;
-  --primary: #FF7647;
-  --primary-foreground: #121417;
-  --dark-chip: #FFF7DF;
-  --dark-chip-fg: #191919;
-  --focus-ring: #FF7647;
-  --success: #4ADE80;
-  --success-bg: #132E20;
-  --error: #F87171;
-  --error-bg: #361919;
+  /* Keep sunny contrast so text never washes out or turns white on light cards */
+  --background: #FFF9EE;
+  --foreground: #2A1F4A;
+  --muted-foreground: #6E6690;
+  --surface: #FFFFFF;
+  --surface-alt: #F4F0FF;
+  --lesson-surface: #FFFFFF;
+  --lesson-badge: #FFE7C2;
+  --lesson-badge-fg: #8A4A00;
+  --review-surface: #FFE4EE;
+  --review-accent: #FF7AA8;
+  --review-accent-fg: #2A1F4A;
+  --border: #EEE6D6;
+  --control-border: #E5DCB8;
+  --accent: #6C4CF1;
+  --accent-foreground: #FFFFFF;
+  --primary: #6C4CF1;
+  --primary-foreground: #FFFFFF;
+  --dark-chip: #2A1F4A;
+  --dark-chip-fg: #FFFFFF;
+  --focus-ring: #6C4CF1;
+  --success: #16A34A;
+  --success-bg: #E6F9C4;
+  --error: #E11D48;
+  --error-bg: #FFE4EE;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -71,14 +75,15 @@ html, body {
   overflow-x: clip;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-thai), "IBM Plex Sans Thai", "Noto Sans Thai", "Sukhumvit Set", "Thonburi", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Mali', var(--font-thai), 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.65;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-.font-en {
-  font-family: var(--font-en), "Plus Jakarta Sans", "Avenir Next", "Helvetica Neue", -apple-system, sans-serif;
+.font-en,
+.font-display {
+  font-family: 'Nunito', var(--font-en), "Plus Jakarta Sans", -apple-system, sans-serif;
 }
 
 button:focus-visible,

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Lesson } from '@/types/curriculum';
 import { ChatMessage } from '@/types/learning';
 import { getChatMessages, addChatMessage } from '@/lib/storage';
-import { Send, Bot, User, RefreshCw } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles } from 'lucide-react';
 
 interface TutorChatPanelProps {
   lesson: Lesson;
@@ -94,49 +94,55 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-surface rounded-2xl overflow-hidden">
+    <div
+      className="flex flex-col h-full bg-white rounded-[28px] overflow-hidden"
+      style={{ border: '2px solid #EEE6D6' }}
+    >
       {/* Header */}
-      <div className="p-4 sm:p-5 bg-review-surface flex items-center justify-between">
+      <div className="p-4 sm:p-4.5 bg-[#F4F0FF] border-b border-[#EEE6D6] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-review-accent text-review-accent-fg flex items-center justify-center font-display font-extrabold text-sm">
-            AI
+          <div className="w-9 h-9 rounded-full bg-[#6C4CF1] text-white flex items-center justify-center font-[900] text-sm shadow-sm">
+            <Sparkles className="w-4 h-4 text-[#C8F04A]" />
           </div>
           <div>
-            <div className="font-bold text-base text-foreground">
-              ครูภาษาอังกฤษของคุณ
+            <div className="font-extrabold text-sm sm:text-base text-[#2A1F4A]">
+              ครู AI ประจำบทเรียน
             </div>
-            <div className="text-xs font-medium text-muted-foreground line-clamp-1">
+            <div className="text-xs font-semibold text-[#6E6690] line-clamp-1">
               วันที่ {lesson.day}: {lesson.title}
             </div>
           </div>
         </div>
+        <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-white text-[#6C4CF1] border border-[#E8E0FF]">
+          ออนไลน์
+        </span>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-3.5 min-h-[300px] max-h-[480px]">
+      <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-3.5 min-h-[300px] max-h-[480px] bg-white">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-2.5 text-sm sm:text-[15px] leading-relaxed ${
+            className={`flex gap-2.5 text-sm sm:text-[14px] leading-relaxed ${
               msg.role === 'user' ? 'justify-end' : 'justify-start'
             }`}
           >
             {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-full bg-background flex items-center justify-center flex-shrink-0 text-muted-foreground mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-[#F4F0FF] flex items-center justify-center shrink-0 text-[#6C4CF1] mt-0.5 border border-[#E8E0FF]">
                 <Bot className="w-4 h-4" />
               </div>
             )}
             <div
               className={`max-w-[85%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
                 msg.role === 'user'
-                  ? 'bg-review-accent text-review-accent-fg rounded-br-sm font-medium'
-                  : 'bg-background text-foreground rounded-bl-sm'
+                  ? 'bg-[#6C4CF1] text-white rounded-br-sm font-semibold shadow-xs'
+                  : 'bg-[#F4F0FF] text-[#2A1F4A] rounded-bl-sm font-medium border border-[#E8E0FF]'
               }`}
             >
               {msg.content}
             </div>
             {msg.role === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-review-accent/20 flex items-center justify-center flex-shrink-0 text-foreground mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-[#FFE7C2] flex items-center justify-center shrink-0 text-[#8A4A00] mt-0.5">
                 <User className="w-4 h-4" />
               </div>
             )}
@@ -144,8 +150,8 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground p-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-accent" />
+          <div className="flex items-center gap-2 text-xs font-bold text-[#6E6690] p-2 bg-[#F4F0FF] rounded-xl w-fit">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#6C4CF1]" />
             <span>ครูกำลังคิดคำตอบ...</span>
           </div>
         )}
@@ -154,14 +160,14 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
       </div>
 
       {/* Quick Prompts */}
-      <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+      <div className="px-3.5 py-2 flex items-center gap-2 overflow-x-auto text-xs font-bold bg-[#FAF8F5] border-t border-[#EEE6D6] scrollbar-none">
         {quickPrompts.map((p, i) => (
           <button
             key={i}
             type="button"
             onClick={() => handleSendMessage(p)}
             disabled={isLoading}
-            className="whitespace-nowrap bg-background px-3 py-1.5 rounded-full text-foreground hover:text-accent transition-colors disabled:opacity-50"
+            className="whitespace-nowrap bg-white px-3 py-1.5 rounded-full text-[#6C4CF1] border border-[#EEE6D6] hover:bg-[#6C4CF1] hover:text-white transition-all disabled:opacity-50"
           >
             {p}
           </button>
@@ -174,7 +180,7 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
           e.preventDefault();
           handleSendMessage();
         }}
-        className="p-3 sm:p-4 bg-surface border-t border-border flex items-center gap-2"
+        className="p-3 bg-white border-t border-[#EEE6D6] flex items-center gap-2"
       >
         <input
           type="text"
@@ -182,12 +188,12 @@ export function TutorChatPanel({ lesson }: TutorChatPanelProps) {
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="ถามครู AI หรือพิมพ์ประโยคให้ช่วยตรวจ..."
           disabled={isLoading}
-          className="flex-1 bg-background border border-control-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+          className="flex-1 bg-[#FFF9EE] border-2 border-[#EEE6D6] rounded-full px-4 py-2.5 text-sm font-medium text-[#2A1F4A] placeholder:text-[#6E6690] focus:border-[#6C4CF1] focus:outline-none"
         />
         <button
           type="submit"
           disabled={!inputMessage.trim() || isLoading}
-          className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:brightness-105 disabled:opacity-40 transition-all"
+          className="w-10 h-10 rounded-full bg-[#6C4CF1] text-white flex items-center justify-center hover:opacity-90 disabled:opacity-40 transition-all shadow-xs active:scale-95"
           aria-label="ส่งข้อความ"
         >
           <Send className="w-4 h-4" />

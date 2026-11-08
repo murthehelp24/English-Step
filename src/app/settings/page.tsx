@@ -1,12 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTheme } from '@/components/theme-provider';
 import {
   ExperienceLevel,
-  StoredAppData,
-  ThemePreference,
   UserRole,
 } from '@/types/learning';
 import {
@@ -15,30 +11,18 @@ import {
   exportUserDataAsJSON,
   importUserDataFromJSON,
   resetAllUserData,
-  syncFromCloud,
-  getPendingLocalBackup,
-  importPendingLocalBackupToCloud,
-  clearPendingLocalBackup,
 } from '@/lib/storage';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import {
-  Sun,
-  Moon,
-  Laptop,
   Download,
   Upload,
   RotateCcw,
   Server,
   Sparkles,
   CheckCircle2,
-  RefreshCw,
-  LogOut,
-  ShieldCheck,
+  Settings,
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const [profile, setProfile] = useState<{
     name: string;
     email: string;
@@ -56,10 +40,6 @@ export default function SettingsPage() {
     targetMinutes: 60,
     timezone: 'Asia/Bangkok',
   });
-  const [lastSyncAt, setLastSyncAt] = useState<string | undefined>(undefined);
-  const [pendingBackup, setPendingBackup] = useState<StoredAppData | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
@@ -77,8 +57,6 @@ export default function SettingsPage() {
           timezone: data.profile.timezone || 'Asia/Bangkok',
         });
       }
-      setLastSyncAt(data.last_sync_at);
-      setPendingBackup(getPendingLocalBackup());
     };
 
     load();
@@ -97,40 +75,6 @@ export default function SettingsPage() {
     });
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
-  };
-
-  const handleManualSync = async () => {
-    setIsSyncing(true);
-    setSyncMessage(null);
-    const res = await syncFromCloud();
-    setIsSyncing(false);
-    setSyncMessage(
-      res.ok
-        ? 'ซิงก์ข้อมูลล่าสุดจาก Supabase เรียบร้อยแล้ว'
-        : 'ยังไม่สามารถซิงก์จาก Supabase ได้ กรุณาตรวจสอบการเข้าสู่ระบบ'
-    );
-  };
-
-  const handleImportLegacyBackup = async () => {
-    setIsSyncing(true);
-    setSyncMessage(null);
-    const ok = await importPendingLocalBackupToCloud();
-    setIsSyncing(false);
-    setSyncMessage(
-      ok
-        ? 'นำเข้าข้อมูลเดิมจากเครื่องขึ้นบัญชี Supabase สำเร็จแล้ว'
-        : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูลเดิมขึ้น Supabase'
-    );
-  };
-
-  const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-    await fetch('/api/auth/logout', { method: 'POST' });
-    resetAllUserData({ localOnly: true });
-    router.push('/login');
-    router.refresh();
   };
 
   const handleExportData = () => {
@@ -170,351 +114,250 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-10 space-y-8 transition-colors duration-200">
-      {/* Header Block */}
-      <div className="bg-lesson-surface rounded-2xl p-7 sm:p-9 space-y-2">
-        <span className="inline-block px-3.5 py-1 rounded-full bg-lesson-badge text-lesson-badge-fg text-sm font-bold">
-          การตั้งค่าระบบส่วนตัว
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-          ตั้งค่าและข้อมูลบัญชี
-        </h1>
-        <p className="text-base text-muted-foreground max-w-xl leading-relaxed">
-          จัดการบัญชีผู้เรียน การซิงก์ฐานข้อมูล ธีมการแสดงผล เป้าหมายรายวัน และการสำรองข้อมูล
-        </p>
-      </div>
+    <div
+      className="min-h-screen py-8 sm:py-10 transition-colors duration-200"
+      style={{ background: '#FFF9EE', color: '#2A1F4A', fontFamily: "Mali, 'Nunito', sans-serif" }}
+    >
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
+        {/* Header Block */}
+        <div
+          className="bg-white rounded-[28px] p-6 sm:p-9 space-y-3"
+          style={{ border: '2px solid #EEE6D6' }}
+        >
+          <span
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold"
+            style={{ background: '#FFE7C2', color: '#8A4A00' }}
+          >
+            <Settings className="w-4 h-4 text-orange-600" />
+            <span>การตั้งค่าระบบส่วนตัว</span>
+          </span>
+          <h1
+            className="text-3xl sm:text-4xl font-[900] tracking-tight"
+            style={{ color: '#2A1F4A', fontFamily: "'Nunito', sans-serif" }}
+          >
+            ตั้งค่าและข้อมูลบัญชี ⚙️
+          </h1>
+          <p className="text-base font-semibold max-w-xl leading-relaxed" style={{ color: '#6E6690' }}>
+            จัดการโปรไฟล์ผู้เรียน ธีมการแสดงผล เป้าหมายเวลาเรียนรายวัน และการสำรองข้อมูล
+          </p>
+        </div>
 
-      {/* Account & Cloud Sync Section (Temporarily hidden per user request until auth is redesigned) */}
-      {false && isSupabaseConfigured && (
-        <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 text-sm font-extrabold text-review-accent">
-                <ShieldCheck className="w-4 h-4" />
-                <span>
-                  {profile.role === 'owner'
-                    ? 'บัญชีเจ้าของระบบ (Owner · Supabase Auth + RLS)'
-                    : 'บัญชีผู้เรียน (Learner · Supabase Auth + RLS)'}
-                </span>
-              </div>
-              <div className="text-lg font-extrabold text-foreground font-display">
-                {profile.email}
-              </div>
-              {lastSyncAt && (
-                <div className="text-xs font-medium text-muted-foreground">
-                  ซิงก์ล่าสุด: {new Date(lastSyncAt || Date.now()).toLocaleString('th-TH')}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleManualSync}
-                disabled={isSyncing}
-                className="inline-flex items-center gap-2 bg-background text-foreground px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-85 disabled:opacity-50 transition-opacity"
-              >
-                <RefreshCw className={`w-4 h-4 text-review-accent ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? 'กำลังซิงก์...' : 'ซิงก์ข้อมูลล่าสุด'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-2 bg-error-bg text-error px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-85 transition-opacity"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>ออกจากระบบ</span>
-              </button>
-            </div>
+        {/* Study Goals Settings Section */}
+        <section
+          className="p-6 sm:p-8 bg-white rounded-[28px] space-y-6"
+          style={{ border: '2px solid #EEE6D6' }}
+        >
+          <div>
+            <h2
+              className="text-2xl font-[900] tracking-tight"
+              style={{ color: '#2A1F4A', fontFamily: "'Nunito', sans-serif" }}
+            >
+              โปรไฟล์และเป้าหมายการเรียน
+            </h2>
+            <p className="text-sm font-semibold text-[#6E6690] mt-1">
+              กำหนดชื่อ ระดับพื้นฐานเริ่มต้น และเวลาเรียนต่อวันของคุณ (ค่าแนะนำตามหลักสูตร: 60 นาที/วัน)
+            </p>
           </div>
 
-          {syncMessage && (
-            <div className="p-3.5 bg-background rounded-xl text-sm font-bold text-foreground">
-              {syncMessage}
+          <form onSubmit={handleSaveProfile} className="space-y-5 max-w-md">
+            <div>
+              <label className="block text-sm font-extrabold text-[#2A1F4A] mb-1.5">
+                ชื่อที่ใช้เรียกคุณ
+              </label>
+              <input
+                type="text"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                className="w-full bg-[#FFF9EE] border-2 border-[#EEE6D6] rounded-2xl px-4 py-3 text-base font-bold text-[#2A1F4A] focus:border-[#6C4CF1] focus:outline-none"
+              />
             </div>
-          )}
 
-          {/* Explicit user opt-in for pre-login local progress */}
-          {pendingBackup && (
-            <div className="p-5 bg-lesson-surface rounded-xl space-y-3">
-              <div className="text-base font-extrabold text-foreground">
-                พบประวัติการเรียนที่เคยบันทึกไว้ในเบราว์เซอร์นี้ก่อนเข้าสู่ระบบ
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                พบ {Object.keys(pendingBackup?.lessons_progress || {}).length} บทเรียนที่มีความคืบหน้า คุณต้องการนำเข้าขึ้นบัญชี Supabase ของคุณหรือไม่?
-              </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={handleImportLegacyBackup}
-                  disabled={isSyncing}
-                  className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-extrabold hover:brightness-105 disabled:opacity-50"
-                >
-                  นำเข้าข้อมูลเดิมขึ้น Supabase
-                </button>
-                <button
-                  type="button"
-                  onClick={() => clearPendingLocalBackup()}
-                  className="bg-background text-muted-foreground hover:text-foreground px-4 py-2.5 rounded-xl text-sm font-bold"
-                >
-                  ไม่นำเข้า (ซ่อนข้อความนี้)
-                </button>
-              </div>
+            <div>
+              <label className="block text-sm font-extrabold text-[#2A1F4A] mb-1.5">
+                ระดับพื้นฐานเริ่มต้น
+              </label>
+              <select
+                value={profile.experienceLevel}
+                onChange={(e) =>
+                  setProfile({ ...profile, experienceLevel: e.target.value as ExperienceLevel })
+                }
+                className="w-full bg-[#FFF9EE] border-2 border-[#EEE6D6] rounded-2xl px-4 py-3 text-base font-bold text-[#2A1F4A] focus:border-[#6C4CF1] focus:outline-none"
+              >
+                <option value="zero">เริ่มจากศูนย์จริงๆ (Phase 0: เสียง &amp; โครงสร้างพื้นฐาน)</option>
+                <option value="beginner">พอรู้คำศัพท์เบื้องต้น (ทบทวนปรับระบบใหม่)</option>
+                <option value="intermediate">สื่อสารเบื้องต้นได้แล้ว (โฟกัส B1–C1 ความคล่อง)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-extrabold text-[#2A1F4A] mb-1.5">
+                เวลาเรียนเป้าหมาย (นาทีต่อวัน)
+              </label>
+              <input
+                type="number"
+                min={15}
+                max={180}
+                value={profile.targetMinutes}
+                onChange={(e) => setProfile({ ...profile, targetMinutes: Number(e.target.value) })}
+                className="w-full bg-[#FFF9EE] border-2 border-[#EEE6D6] rounded-2xl px-4 py-3 text-base font-bold text-[#2A1F4A] focus:border-[#6C4CF1] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-extrabold text-[#2A1F4A] mb-1.5">
+                เขตเวลา (Timezone)
+              </label>
+              <input
+                type="text"
+                disabled
+                value={profile.timezone}
+                className="w-full bg-[#FAF8F5] border border-[#EEE6D6] rounded-2xl px-4 py-3 text-base font-semibold text-[#6E6690]"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <button
+                type="submit"
+                className="bg-[#6C4CF1] text-white text-base font-[900] px-7 py-3 rounded-full hover:bg-[#5838DF] active:scale-95 transition-all shadow-sm"
+              >
+                บันทึกการตั้งค่า
+              </button>
+              {saveSuccess && (
+                <span className="text-sm font-extrabold text-[#16A34A] inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>บันทึกสำเร็จแล้ว</span>
+                </span>
+              )}
+            </div>
+          </form>
+        </section>
+
+        {/* Data Ownership & Backup Section */}
+        <section
+          className="p-6 sm:p-8 bg-white rounded-[28px] space-y-5"
+          style={{ border: '2px solid #EEE6D6' }}
+        >
+          <div>
+            <h2
+              className="text-2xl font-[900] tracking-tight"
+              style={{ color: '#2A1F4A', fontFamily: "'Nunito', sans-serif" }}
+            >
+              ความเป็นเจ้าของข้อมูล และการสำรอง (Backup &amp; Restore)
+            </h2>
+            <p className="text-sm font-semibold text-[#6E6690] mt-1 leading-relaxed">
+              ข้อมูลการเรียนทั้งหมดเป็นของคุณ สามารถส่งออก (Export) นำเข้า (Import) หรือล้างข้อมูลเพื่อเริ่มใหม่ได้ตลอดเวลา
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleExportData}
+              className="inline-flex items-center gap-2 bg-[#FFF9EE] border-2 border-[#EEE6D6] px-5 py-3 rounded-full text-sm font-extrabold text-[#2A1F4A] hover:bg-[#F4F0FF] transition-all"
+            >
+              <Download className="w-4 h-4 text-[#6C4CF1]" />
+              <span>ส่งออกข้อมูล (Export JSON)</span>
+            </button>
+
+            <label className="inline-flex items-center gap-2 bg-[#FFF9EE] border-2 border-[#EEE6D6] px-5 py-3 rounded-full text-sm font-extrabold text-[#2A1F4A] hover:bg-[#F4F0FF] cursor-pointer transition-all">
+              <Upload className="w-4 h-4 text-[#6C4CF1]" />
+              <span>นำเข้าข้อมูล (Import JSON)</span>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={handleResetData}
+              className="inline-flex items-center gap-2 bg-[#FFE4EE] border border-pink-200 px-5 py-3 rounded-full text-sm font-extrabold text-[#C24A6E] hover:bg-pink-100 transition-all sm:ml-auto"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>ล้างข้อมูลเพื่อเริ่มใหม่</span>
+            </button>
+          </div>
+
+          {importStatus && (
+            <div className="p-3.5 bg-[#FFF9EE] rounded-2xl border border-[#EEE6D6] text-sm font-extrabold text-[#6C4CF1]">
+              {importStatus}
             </div>
           )}
         </section>
-      )}
 
-      {/* Theme Settings Section */}
-      <section className="p-6 sm:p-8 bg-surface rounded-2xl space-y-5">
-        <div>
-          <h2 className="text-xl font-extrabold text-foreground">
-            ธีมการแสดงผล (Nordic Bright)
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            เลือกโทนสีที่อ่านง่ายสบายตา ทั้งสามตัวเลือกรองรับโทนอุ่นและบล็อกสีคมชัด
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { id: 'light', label: 'สว่าง (Light)', icon: Sun, desc: 'พื้นขาวสะอาด บล็อกสีอุ่นอ่านง่าย' },
-            { id: 'dark', label: 'มืด (Dark)', icon: Moon, desc: 'พื้นถ่านนุ่มสบายตาในที่แสงน้อย' },
-            { id: 'system', label: 'ตามระบบ (System)', icon: Laptop, desc: 'ปรับอัตโนมัติตามอุปกรณ์ของคุณ' },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isSelected = theme === item.id;
-
-            return (
-              <button
-                type="button"
-                key={item.id}
-                onClick={() => setTheme(item.id as ThemePreference)}
-                className={`p-5 rounded-xl bg-background text-left transition-all ${
-                  isSelected
-                    ? 'ring-2 ring-accent'
-                    : 'hover:opacity-90'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 font-extrabold text-base text-foreground mb-1.5">
-                  <Icon className={`w-5 h-5 ${isSelected ? 'text-accent' : 'text-muted-foreground'}`} />
-                  <span>{item.label}</span>
-                </div>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  {item.desc}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Study Goals Settings Section */}
-      <section className="p-6 sm:p-8 bg-lesson-surface rounded-2xl space-y-6">
-        <div>
-          <h2 className="text-xl font-extrabold text-foreground">
-            โปรไฟล์และเป้าหมายการเรียน
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            กำหนดชื่อ ระดับพื้นฐานเริ่มต้น และเวลาเรียนต่อวันของคุณ (ค่าแนะนำตามหลักสูตร: 60 นาที/วัน)
-          </p>
-        </div>
-
-        <form onSubmit={handleSaveProfile} className="space-y-5 max-w-md">
+        {/* System & Services Status */}
+        <section
+          className="p-6 sm:p-8 bg-white rounded-[28px] space-y-4"
+          style={{ border: '2px solid #EEE6D6' }}
+        >
           <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
-              ชื่อที่ใช้เรียกคุณ
-            </label>
-            <input
-              type="text"
-              value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3 text-base text-foreground focus:border-accent focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
-              ระดับพื้นฐานเริ่มต้น
-            </label>
-            <select
-              value={profile.experienceLevel}
-              onChange={(e) =>
-                setProfile({ ...profile, experienceLevel: e.target.value as ExperienceLevel })
-              }
-              className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3 text-base text-foreground focus:border-accent focus:outline-none"
+            <h2
+              className="text-2xl font-[900] tracking-tight"
+              style={{ color: '#2A1F4A', fontFamily: "'Nunito', sans-serif" }}
             >
-              <option value="zero">เริ่มจากศูนย์จริงๆ (Phase 0: เสียง &amp; โครงสร้างพื้นฐาน)</option>
-              <option value="beginner">พอรู้คำศัพท์เบื้องต้น (ทบทวนปรับระบบใหม่)</option>
-              <option value="intermediate">สื่อสารเบื้องต้นได้แล้ว (โฟกัส B1–C1 ความคล่อง)</option>
-            </select>
+              สถานะการเชื่อมต่อบริการ
+            </h2>
+            <p className="text-sm font-semibold text-[#6E6690] mt-1">
+              รายละเอียดความพร้อมของระบบที่ใช้งานได้ทันทีและบริการบนคลาวด์
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
-              เวลาเรียนเป้าหมาย (นาทีต่อวัน)
-            </label>
-            <input
-              type="number"
-              min={15}
-              max={180}
-              value={profile.targetMinutes}
-              onChange={(e) => setProfile({ ...profile, targetMinutes: Number(e.target.value) })}
-              className="w-full bg-background border-2 border-control-border rounded-xl px-4 py-3 text-base text-foreground focus:border-accent focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-foreground mb-1.5">
-              เขตเวลา (Timezone)
-            </label>
-            <input
-              type="text"
-              disabled
-              value={profile.timezone}
-              className="w-full bg-background/70 border border-border rounded-xl px-4 py-3 text-base text-muted-foreground"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 pt-1">
-            <button
-              type="submit"
-              className="bg-primary text-primary-foreground text-base font-extrabold px-6 py-3 rounded-xl hover:brightness-105 active:scale-[0.99] transition-all"
-            >
-              บันทึกการตั้งค่า
-            </button>
-            {saveSuccess && (
-              <span className="text-sm font-bold text-success inline-flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>บันทึกสำเร็จแล้ว</span>
+          <div className="space-y-3 pt-1">
+            <div className="p-5 bg-[#FFF9EE] rounded-2xl border border-[#EEE6D6] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <Server className="w-5 h-5 text-[#6E6690] shrink-0 mt-0.5 sm:mt-0" />
+                <div>
+                  <div className="text-base font-extrabold text-[#2A1F4A]">
+                    ระบบจัดเก็บข้อมูล (Local Storage พร้อมใช้งานทันที)
+                  </div>
+                  <div className="text-sm font-medium text-[#6E6690]">
+                    โหมดเปิดให้เข้าเรียนได้ทันทีโดยไม่ต้องล็อกอิน บันทึกความก้าวหน้าและคะแนน XP ในเครื่องของคุณ
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs sm:text-sm px-3.5 py-1 rounded-full font-extrabold bg-[#E6F9C4] text-[#3A6B0A] self-start sm:self-center shrink-0">
+                พร้อมใช้งาน
               </span>
-            )}
-          </div>
-        </form>
-      </section>
+            </div>
 
-      {/* Data Ownership & Backup Section */}
-      <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
-        <div>
-          <h2 className="text-xl font-extrabold text-foreground">
-            ความเป็นเจ้าของข้อมูล และการสำรอง (Backup &amp; Restore)
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-            ข้อมูลการเรียนทั้งหมดเป็นของคุณ สามารถส่งออก (Export) นำเข้า (Import) หรือล้างข้อมูลเพื่อเริ่มใหม่ได้ตลอดเวลา
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <button
-            type="button"
-            onClick={handleExportData}
-            className="inline-flex items-center gap-2 bg-background px-5 py-3 rounded-xl text-sm font-bold text-foreground hover:opacity-85 transition-opacity"
-          >
-            <Download className="w-4 h-4 text-review-accent" />
-            <span>ส่งออกข้อมูล (Export JSON)</span>
-          </button>
-
-          <label className="inline-flex items-center gap-2 bg-background px-5 py-3 rounded-xl text-sm font-bold text-foreground hover:opacity-85 cursor-pointer transition-opacity">
-            <Upload className="w-4 h-4 text-review-accent" />
-            <span>นำเข้าข้อมูล (Import JSON)</span>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-          </label>
-
-          <button
-            type="button"
-            onClick={handleResetData}
-            className="inline-flex items-center gap-2 bg-error-bg px-5 py-3 rounded-xl text-sm font-bold text-error hover:opacity-85 transition-opacity sm:ml-auto"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>ล้างข้อมูลเพื่อเริ่มใหม่</span>
-          </button>
-        </div>
-
-        {importStatus && (
-          <div className="p-3.5 bg-background rounded-xl text-sm font-bold text-accent">
-            {importStatus}
-          </div>
-        )}
-      </section>
-
-      {/* System & Services Status */}
-      <section className="p-6 sm:p-8 bg-surface rounded-2xl space-y-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-foreground">
-            สถานะการเชื่อมต่อบริการ
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            รายละเอียดความพร้อมของระบบที่ใช้งานได้ทันทีและบริการบนคลาวด์
-          </p>
-        </div>
-
-        <div className="space-y-3 pt-1">
-          <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <Server className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <div className="text-base font-bold text-foreground">
-                  ฐานข้อมูล Supabase (PostgreSQL, Auth &amp; Multi-User RLS)
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {isSupabaseConfigured
-                    ? 'เชื่อมต่อฐานข้อมูล Supabase โหลดบทเรียน 252 วันและแยกสิทธิ์ผู้ใช้ด้วย RLS แล้ว'
-                    : 'โหมดใช้งานในเครื่อง (Local Storage พร้อมใช้งานทันที)'}
+            <div className="p-5 bg-[#FFF9EE] rounded-2xl border border-[#EEE6D6] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <Sparkles className="w-5 h-5 text-[#6C4CF1] shrink-0 mt-0.5 sm:mt-0" />
+                <div>
+                  <div className="text-base font-extrabold text-[#2A1F4A]">
+                    ครู AI ภาษาอังกฤษ (AI Tutor v2)
+                  </div>
+                  <div className="text-sm font-medium text-[#6E6690]">
+                    รองรับ IPA, Connected Speech, แก้จุดพลาดคนไทย (Thai L1) และตรวจประโยคเขียนเบื้องต้น
+                  </div>
                 </div>
               </div>
+              <span className="text-xs sm:text-sm px-3.5 py-1 rounded-full font-extrabold bg-[#E6F9C4] text-[#3A6B0A] self-start sm:self-center shrink-0">
+                พร้อมใช้งาน
+              </span>
             </div>
-            <span
-              className={`text-xs sm:text-sm px-3.5 py-1 rounded-full font-bold self-start sm:self-center shrink-0 ${
-                isSupabaseConfigured
-                  ? 'bg-success-bg text-success'
-                  : 'bg-lesson-badge text-lesson-badge-fg'
-              }`}
-            >
-              {isSupabaseConfigured ? 'เชื่อมต่อแล้ว' : 'รอใส่ Key ใน .env.local'}
-            </span>
-          </div>
 
-          <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <Sparkles className="w-5 h-5 text-accent flex-shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <div className="text-base font-bold text-foreground">
-                  ครู AI ภาษาอังกฤษ (AI Tutor v2)
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  รองรับ IPA, Connected Speech, แก้จุดพลาดคนไทย (Thai L1) และตรวจประโยคเขียนเบื้องต้น
+            <div className="p-5 bg-[#FFF9EE] rounded-2xl border border-[#EEE6D6] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <CheckCircle2 className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5 sm:mt-0" />
+                <div>
+                  <div className="text-base font-extrabold text-[#2A1F4A]">
+                    เสียงอ่าน &amp; ฝึก Shadowing (Web Speech API)
+                  </div>
+                  <div className="text-sm font-medium text-[#6E6690]">
+                    ปรับความเร็วได้ 3 ระดับ (0.75x / 0.9x / 1.0x) พร้อมโหมด Blind Shadowing และนาฬิกา 4/3/2
+                  </div>
                 </div>
               </div>
+              <span className="text-xs sm:text-sm px-3.5 py-1 rounded-full font-extrabold bg-[#E6F9C4] text-[#3A6B0A] self-start sm:self-center shrink-0">
+                พร้อมใช้งาน
+              </span>
             </div>
-            <span className="text-xs sm:text-sm px-3.5 py-1 rounded-full font-bold bg-success-bg text-success self-start sm:self-center shrink-0">
-              พร้อมใช้งาน
-            </span>
           </div>
-
-          <div className="p-5 bg-background rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5 sm:mt-0" />
-              <div>
-                <div className="text-base font-bold text-foreground">
-                  เสียงอ่าน &amp; ฝึก Shadowing (Web Speech API)
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  ปรับความเร็วได้ 3 ระดับ (0.75x / 0.9x / 1.0x) พร้อมโหมด Blind Shadowing และนาฬิกา 4/3/2
-                </div>
-              </div>
-            </div>
-            <span className="text-xs sm:text-sm px-3.5 py-1 rounded-full font-bold bg-success-bg text-success self-start sm:self-center shrink-0">
-              พร้อมใช้งาน
-            </span>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { getAllLessons, getLessonsByWeek } from '@/lib/curriculum';
 import { getStoredData, getDueReviewItems, getAllReviewItems } from '@/lib/storage';
 import { StoredAppData } from '@/types/learning';
 import { speechService } from '@/lib/speech';
-import { Volume2, Sparkles, Flame, Check } from 'lucide-react';
+import { Volume2, Check } from 'lucide-react';
 
 // Palette for Sunny Path
 const c = {
@@ -97,7 +97,6 @@ export default function TodayPage() {
   );
 
   const totalDays = allLessons.length || 252;
-  const streakDays = Math.max(1, completedCount);
   const pct = completedCount / totalDays;
   const R = 52;
   const C = 2 * Math.PI * R;
@@ -111,67 +110,15 @@ export default function TodayPage() {
   ];
 
   return (
-    <>
-      {/* Hide the legacy top navbar and footer only on this sunny homepage */}
-      <style>{`
-        header:has(~ main.flex-1), main.flex-1 ~ footer { display: none !important; }
-        main.flex-1 { padding-bottom: 0 !important; }
-      `}</style>
-
-      <div
-        style={{ background: c.bg, color: c.ink, fontFamily: "Mali, 'Nunito', sans-serif" }}
-        className="min-h-screen pb-24 transition-colors duration-200"
-      >
-        {/* Google Fonts */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@600;800;900&display=swap"
-        />
-
-        {/* Top Header */}
-        <header className="max-w-[1240px] mx-auto px-5 pt-5 pb-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-1.5 group">
-            <span
-              className="text-2xl sm:text-3xl font-[900] tracking-tight group-hover:scale-105 transition-transform"
-              style={{ fontFamily: 'Nunito, sans-serif', color: c.violet }}
-            >
-              English<span style={{ color: c.pink }}>Steps</span> 🐾
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2.5 text-sm font-extrabold">
-            <span
-              className="px-3.5 py-1.5 rounded-full flex items-center gap-1.5 text-xs sm:text-sm"
-              style={{ background: '#FFE7C2', color: '#8A4A00' }}
-            >
-              <Flame className="w-4 h-4 fill-current text-orange-500" />
-              <span>{streakDays} วันติด</span>
-            </span>
-
-            <span
-              className="px-3.5 py-1.5 rounded-full hidden sm:inline-flex items-center gap-1 text-xs sm:text-sm"
-              style={{ background: '#E6F9C4', color: '#3A6B0A' }}
-            >
-              <Sparkles className="w-4 h-4 text-lime-600" />
-              <span>{completedCount * 10} XP</span>
-            </span>
-
-            <Link
-              href="/settings"
-              aria-label="ตั้งค่า"
-              className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:opacity-80 transition-opacity border border-[#EEE6D6]"
-            >
-              ⚙️
-            </Link>
-          </div>
-        </header>
-
-        {/* Main 3-Column Content */}
-        <main className="max-w-[1240px] mx-auto px-4 sm:px-5 mt-4 grid grid-cols-1 lg:grid-cols-[290px_minmax(0,1fr)_320px] gap-6 items-start">
-          {/* =========================================================================
-              LEFT COLUMN: Friendly Progress Ring & Today's Headline Card
-              ========================================================================= */}
+    <div
+      style={{ background: c.bg, color: c.ink, fontFamily: "Mali, 'Nunito', sans-serif" }}
+      className="min-h-screen pb-16 transition-colors duration-200"
+    >
+      {/* Main 3-Column Content */}
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-5 pt-6 grid grid-cols-1 lg:grid-cols-[290px_minmax(0,1fr)_320px] gap-6 items-start">
+        {/* =========================================================================
+            LEFT COLUMN: Friendly Progress Ring & Today's Headline Card
+            ========================================================================= */}
           <aside
             className="rounded-[28px] p-6 text-center space-y-4"
             style={{ background: c.card, border: `2px solid ${c.line}` }}
@@ -247,7 +194,10 @@ export default function TodayPage() {
               >
                 สัปดาห์ {currentLesson.week} · {currentLesson.cefr_level || 'Pre-A1'}
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold mt-3 leading-snug text-foreground">
+              <h1
+                className="text-xl sm:text-2xl font-extrabold mt-3 leading-snug"
+                style={{ color: c.ink }}
+              >
                 {currentLesson.week_title}
               </h1>
             </div>
@@ -313,7 +263,7 @@ export default function TodayPage() {
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-extrabold text-lg">ภารกิจวันนี้ 🎯</h2>
-                <span className="text-xs font-bold text-muted-foreground">{currentLesson.minutes || 60} นาที</span>
+                <span className="text-xs font-bold" style={{ color: c.soft }}>{currentLesson.minutes || 60} นาที</span>
               </div>
               <p className="text-xs sm:text-sm font-semibold" style={{ color: c.soft }}>
                 {currentLesson.title}
@@ -343,7 +293,7 @@ export default function TodayPage() {
               style={{ background: '#FFE4EE' }}
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-extrabold text-lg text-foreground">แก้จุดพลาด 💪</h2>
+                <h2 className="font-extrabold text-lg" style={{ color: c.ink }}>แก้จุดพลาด 💪</h2>
                 <span
                   className="px-3 py-1 rounded-full text-xs font-extrabold text-white"
                   style={{ background: c.pink }}
@@ -362,50 +312,7 @@ export default function TodayPage() {
               </div>
             </Link>
           </aside>
-        </main>
-
-        {/* Desktop Quick Bottom Links */}
-        <nav className="hidden lg:flex justify-center gap-3 mt-10 text-sm font-extrabold">
-          {[
-            ['🗺️ บทเรียน 36 โมดูล', '/weeks'],
-            ['📚 คลังคำศัพท์ & Chunks', '/vocabulary'],
-            ['📈 สถิติ & พัฒนาการ', '/progress'],
-            ['⚙️ ตั้งค่า', '/settings'],
-          ].map(([title, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className="px-5 py-2.5 rounded-full bg-white hover:opacity-85 transition-opacity"
-              style={{ border: `2px solid ${c.line}`, color: c.ink }}
-            >
-              {title}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Mobile Bottom Tab Bar */}
-        <nav
-          className="lg:hidden fixed bottom-0 inset-x-0 z-40 grid grid-cols-4 text-center text-[11px] font-extrabold pt-2 pb-5 bg-white"
-          style={{ borderTop: `2px solid ${c.line}` }}
-        >
-          {[
-            ['🏠', 'วันนี้', '/'],
-            ['🗺️', 'บทเรียน', '/weeks'],
-            ['🔁', 'ทบทวน', '/review'],
-            ['📈', 'พัฒนาการ', '/progress'],
-          ].map(([icon, label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              style={{ color: href === '/' ? c.violet : c.soft }}
-              className="py-1"
-            >
-              <div className="text-xl">{icon}</div>
-              <div>{label}</div>
-            </Link>
-          ))}
-        </nav>
+        </div>
       </div>
-    </>
   );
 }

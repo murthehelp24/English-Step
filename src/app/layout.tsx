@@ -37,15 +37,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Anti-FOUC Theme Script */}
+        {/* Anti-FOUC Theme Script: Defaults to Sunny Light */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
                   var stored = localStorage.getItem('english_steps_theme');
-                  var theme = stored || 'system';
-                  var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var theme = stored || 'light';
+                  var isDark = theme === 'dark';
                   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
                   if (isDark) {
                     document.documentElement.classList.add('dark');

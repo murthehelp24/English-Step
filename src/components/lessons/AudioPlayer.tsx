@@ -63,33 +63,33 @@ export function AudioPlayer({ text, label = 'ฟังเสียงอ่า�
     rate <= 0.76 ? 'ช้า 0.75x' : rate <= 0.92 ? 'กลาง 0.9x' : 'ปกติ 1.0x';
 
   return (
-    <div className="inline-flex items-center gap-2 bg-surface px-3.5 py-2 rounded-xl text-sm">
+    <div className="inline-flex items-center gap-2 bg-[#F4F0FF] border border-[#E8E0FF] px-3.5 py-1.5 rounded-full text-xs sm:text-sm">
       <button
         type="button"
         onClick={handlePlay}
-        className="flex items-center gap-2 font-bold text-foreground hover:text-accent transition-colors"
+        className="flex items-center gap-1.5 font-extrabold text-[#6C4CF1] hover:text-[#4B2FC9] transition-colors"
         aria-label={isPlaying ? 'หยุดเล่นเสียง' : label || 'ฟังเสียง'}
       >
         {isPlaying ? (
           <>
-            <Square className="w-4 h-4 fill-current text-accent" />
-            <span>หยุด</span>
+            <Square className="w-3.5 h-3.5 fill-current text-[#FF7AA8]" />
+            <span className="text-[#FF7AA8]">หยุด</span>
           </>
         ) : (
           <>
-            <Volume2 className="w-4 h-4 text-accent" />
+            <Volume2 className="w-4 h-4 text-[#6C4CF1]" />
             {label && <span>{label}</span>}
           </>
         )}
       </button>
 
-      <span className="w-px h-4 bg-border" />
+      <span className="w-px h-3.5 bg-[#D8CEF8]" />
 
       {/* Speed Rate Cycle (0.75x -> 0.9x -> 1.0x) */}
       <button
         type="button"
         onClick={cycleRate}
-        className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-1 whitespace-nowrap"
+        className="text-[11px] font-bold text-[#6E6690] hover:text-[#2A1F4A] transition-colors px-1 whitespace-nowrap"
         title="สลับความเร็วเสียง (ช้า 0.75x / กลาง 0.9x / ปกติ 1.0x)"
         aria-label={`ความเร็วเสียง: ${rateLabel}`}
       >
