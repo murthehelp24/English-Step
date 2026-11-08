@@ -23,20 +23,7 @@ const ChatRequestSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await getVerifiedOwnerSession();
-    if (session.configured) {
-      if (!session.user) {
-        return NextResponse.json(
-          { error: 'กรุณาเข้าสู่ระบบก่อนใช้งานครู AI' },
-          { status: 401 }
-        );
-      }
-      if (!session.isAuthorized) {
-        return NextResponse.json(
-          { error: 'บัญชีนี้ไม่มีสิทธิ์ใช้งานครู AI' },
-          { status: 403 }
-        );
-      }
-    }
+    // Auth requirement temporarily bypassed per user request
 
     const rawBody = await req.json();
     const parsed = ChatRequestSchema.safeParse(rawBody);

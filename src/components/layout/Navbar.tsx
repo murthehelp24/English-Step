@@ -2,25 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/components/theme-provider';
 import { getAllLessons } from '@/lib/curriculum';
 import {
   getStoredData,
   getDueReviewItems,
-  resetAllUserData,
 } from '@/lib/storage';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
-import { Sun, Moon, Laptop, Settings, LogOut } from 'lucide-react';
+import { Sun, Moon, Laptop, Settings } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [currentDay, setCurrentDay] = useState(1);
   const [dueReviewsCount, setDueReviewsCount] = useState(0);
-  const [authEmail, setAuthEmail] = useState<string | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const syncNavStats = () => {
@@ -41,38 +36,6 @@ export function Navbar() {
     window.addEventListener('english_steps_storage_updated', syncNavStats);
     return () => window.removeEventListener('english_steps_storage_updated', syncNavStats);
   }, []);
-
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
-
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthEmail(data.user?.email || null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthEmail(session?.user?.email || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    try {
-      if (supabase) {
-        await supabase.auth.signOut();
-      }
-      await fetch('/api/auth/logout', { method: 'POST' });
-      resetAllUserData({ localOnly: true });
-      router.push('/login');
-      router.refresh();
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
 
   const navLinks = [
     { href: '/', label: 'หน้าแรก' },
@@ -178,18 +141,7 @@ export function Navbar() {
             </Link>
           )}
 
-          {!isLoginPage && isSupabaseConfigured && authEmail && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              aria-label="ออกจากระบบ"
-              title={`ออกจากระบบ (${authEmail})`}
-              className="w-10 h-10 rounded-xl bg-surface text-muted-foreground hover:text-error flex items-center justify-center transition-colors disabled:opacity-50"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
+
         </div>
       </div>
 

@@ -184,8 +184,8 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Account & Cloud Sync Section */}
-      {isSupabaseConfigured && (
+      {/* Account & Cloud Sync Section (Temporarily hidden per user request until auth is redesigned) */}
+      {false && isSupabaseConfigured && (
         <section className="p-6 sm:p-8 bg-review-surface rounded-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -202,7 +202,7 @@ export default function SettingsPage() {
               </div>
               {lastSyncAt && (
                 <div className="text-xs font-medium text-muted-foreground">
-                  ซิงก์ล่าสุด: {new Date(lastSyncAt).toLocaleString('th-TH')}
+                  ซิงก์ล่าสุด: {new Date(lastSyncAt || Date.now()).toLocaleString('th-TH')}
                 </div>
               )}
             </div>
@@ -242,7 +242,7 @@ export default function SettingsPage() {
                 พบประวัติการเรียนที่เคยบันทึกไว้ในเบราว์เซอร์นี้ก่อนเข้าสู่ระบบ
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                พบ {Object.keys(pendingBackup.lessons_progress || {}).length} บทเรียนที่มีความคืบหน้า คุณต้องการนำเข้าขึ้นบัญชี Supabase ของคุณหรือไม่?
+                พบ {Object.keys(pendingBackup?.lessons_progress || {}).length} บทเรียนที่มีความคืบหน้า คุณต้องการนำเข้าขึ้นบัญชี Supabase ของคุณหรือไม่?
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <button

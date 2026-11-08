@@ -1,123 +1,26 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
 
-const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
-const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
-
-const isSupabaseEnabled = Boolean(
-  supabaseUrl &&
-    supabaseAnonKey &&
-    supabaseUrl.startsWith('https://') &&
-    !supabaseUrl.includes('your-project') &&
-    !supabaseAnonKey.includes('your_supabase')
-);
-
-function isMultiUserEnabled(): boolean {
-  return (process.env.ALLOW_MULTI_USER || '').trim().toLowerCase() === 'true';
-}
-
-function isOwnerEmail(email?: string | null): boolean {
-  const ownerEmail = (process.env.OWNER_EMAIL || '').trim().toLowerCase();
-  if (!ownerEmail) return Boolean(email);
-  if (!email) return false;
-  return email.trim().toLowerCase() === ownerEmail;
-}
-
-function isAuthorizedUser(email?: string | null): boolean {
-  if (!email) return false;
-  if (isMultiUserEnabled()) return true;
-  return isOwnerEmail(email);
-}
-
-function getSafeNextPath(nextParam: string | null): string {
-  if (!nextParam) return '/';
-  if (!nextParam.startsWith('/') || nextParam.startsWith('//')) return '/';
-  return nextParam;
-}
-
+/**
+ * Authentication Middleware (Temporarily Bypassed per user request)
+ * The login gate is removed so anyone can enter and study directly without logging in.
+ * If someone accesses /login, they are redirected straight to the home dashboard.
+ */
 export async function middleware(request: NextRequest) {
-  if (!isSupabaseEnabled) {
-    return NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  // Redirect /login directly to home dashboard /
+  if (pathname === '/login') {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = '/';
+    homeUrl.search = '';
+    return NextResponse.redirect(homeUrl);
   }
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value);
-        });
-        response = NextResponse.next({
-          request: {
-            headers: request.headers,
-          },
-        });
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { pathname, search } = request.nextUrl;
-  const isPublicPage = pathname === '/login' || pathname.startsWith('/auth/');
-  const isApiRoute = pathname.startsWith('/api/');
-
-  // Let API handlers enforce JSON 401/403 status cleanly
-  if (isApiRoute) {
-    return response;
-  }
-
-  // Unauthenticated access to protected page -> redirect to /login
-  if (!user && !isPublicPage) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    const nextPath = pathname + (search || '');
-    if (nextPath && nextPath !== '/') {
-      loginUrl.searchParams.set('next', nextPath);
-    }
-    return NextResponse.redirect(loginUrl);
-  }
-
-  const authorized = user ? isAuthorizedUser(user.email) : false;
-
-  // Authenticated with unauthorized email (when private owner mode is active) -> block access
-  if (user && !authorized) {
-    if (!isPublicPage) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = '/login';
-      loginUrl.searchParams.set('error', 'unauthorized');
-      return NextResponse.redirect(loginUrl);
-    }
-    return response;
-  }
-
-  // Authorized user visiting /login -> send straight to dashboard or requested page
-  if (user && authorized && pathname === '/login') {
-    const nextPath = getSafeNextPath(request.nextUrl.searchParams.get('next'));
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = nextPath === '/login' ? '/' : nextPath;
-    redirectUrl.search = '';
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon-.*\\.png|apple-icon\\.png|robots.txt|sitemap.xml).*)',
   ],
 };

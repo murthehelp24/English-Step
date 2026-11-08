@@ -160,11 +160,8 @@ function isMissingColumnError(err: { code?: string; message?: string } | null): 
 export async function GET() {
   try {
     const session = await getVerifiedOwnerSession();
-    if (!session.configured || !session.supabase) {
+    if (!session.configured || !session.supabase || !session.user) {
       return NextResponse.json({ mode: 'local', configured: false });
-    }
-    if (!session.user) {
-      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบก่อนใช้งาน' }, { status: 401 });
     }
     if (!session.isAuthorized) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงระบบ' }, { status: 403 });
@@ -349,11 +346,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await getVerifiedOwnerSession();
-    if (!session.configured || !session.supabase) {
+    if (!session.configured || !session.supabase || !session.user) {
       return NextResponse.json({ mode: 'local', synced: false });
-    }
-    if (!session.user) {
-      return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบก่อนใช้งาน' }, { status: 401 });
     }
     if (!session.isAuthorized) {
       return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึงระบบ' }, { status: 403 });
